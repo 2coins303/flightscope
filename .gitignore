@@ -1,0 +1,13 @@
+# Local relay settings and secrets (HOST, PORT, FLIGHTSCOPE_CONTACT, OpenSky client id/secret): never commit
+flightscope.env
+*.env
+
+# Claude Code's per-machine settings
+.claude/settings.local.json
+
+# OS and editor clutter
+Thumbs.db
+desktop.ini
+.DS_Store
+node_modules/
+*.log

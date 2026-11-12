@@ -1,0 +1,2165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FlightScope</title>
+<meta name="description" content="Live aircraft radar with trails and full aircraft details, fed by open ADS-B networks.">
+<meta name="theme-color" content="#0c1218" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#edf0f3" media="(prefers-color-scheme: light)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FlightScope">
+<!-- Served by the relay (flightscope-server.js or the worker); harmless 404s when the page is opened as a file. -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+.leaflet-tile::selection {
+	background: transparent;
+}
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+.leaflet-container img.leaflet-tile {
+	mix-blend-mode: plus-lighter;
+}
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+.leaflet-pane         { z-index: 400; }
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; 
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; 
+	pointer-events: auto;
+	}
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+.leaflet-default-icon-path { 
+	background-image: url(images/marker-icon.png);
+	}
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+	margin: -10px auto 0;
+	pointer-events: auto;
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+@media print {
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+</style>
+<style>
+/* Layout: full-bleed map; a floating strip-board header, a slide-in detail panel
+   (right column on wide screens, bottom sheet on phones), legend bottom-left. */
+:root{
+  color-scheme:dark;
+  --bg:#0c1218; --panel:#121b25; --panel-2:#192431; --line:#263444; --line-2:#334457;
+  --fg:#e5ebf1; --muted:#8a9aac; --faint:#5c6c7e;
+  --accent:#f4b13f; --accent-ink:#1b1305;
+  --danger:#ff5d5d; --ok:#45d08f; --mil:#c084fc;
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+  --font-display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --font-ui:'Barlow',system-ui,-apple-system,sans-serif;
+  --font-data:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --radius:10px;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    color-scheme:light;
+    --bg:#edf0f3; --panel:#ffffff; --panel-2:#f2f5f8; --line:#d3dbe4; --line-2:#b9c5d2;
+    --fg:#141d27; --muted:#5a6b7d; --faint:#8b9aab;
+    --accent:#c27a06; --accent-ink:#fff;
+    --danger:#d12f3a; --ok:#15915b; --mil:#7c3aed;
+    --shadow:0 10px 30px rgba(20,30,40,.18);
+  }
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#edf0f3; --panel:#ffffff; --panel-2:#f2f5f8; --line:#d3dbe4; --line-2:#b9c5d2;
+  --fg:#141d27; --muted:#5a6b7d; --faint:#8b9aab;
+  --accent:#c27a06; --accent-ink:#fff;
+  --danger:#d12f3a; --ok:#15915b; --mil:#7c3aed;
+  --shadow:0 10px 30px rgba(20,30,40,.18);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 var(--font-ui);overflow:hidden;-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums}
+#app{position:relative;height:100%;width:100%;overflow:hidden}
+#map{position:absolute;inset:0;background:var(--bg)}
+.streets-dark .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.55)}
+.leaflet-container{font-family:var(--font-ui);background:var(--bg)}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--panel) 85%,transparent);color:var(--muted);font-size:10px}
+.leaflet-control-attribution a{color:var(--muted)}
+.leaflet-bar a{background:var(--panel);color:var(--fg);border-bottom-color:var(--line)}
+.leaflet-bar a:hover{background:var(--panel-2)}
+.leaflet-bar{border:1px solid var(--line);box-shadow:var(--shadow)}
+
+/* Header strip */
+#top{position:absolute;z-index:1000;top:0;left:0;right:0;
+  padding-top:calc(8px + env(safe-area-inset-top,0px));
+  padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;pointer-events:none}
+#top>*{pointer-events:auto}
+.brand{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px 6px 8px;box-shadow:var(--shadow);min-width:0}
+.brand .mark{width:22px;height:22px;flex:none;color:var(--accent)}
+.brand h1{margin:0;font:700 20px/1 var(--font-display);letter-spacing:.02em;text-transform:uppercase}
+/* The status has a fixed width so the search box and toolbar never shift when its text changes length. */
+.status{display:flex;align-items:center;gap:7px;font:500 12px/1 var(--font-data);color:var(--muted);white-space:nowrap;padding-left:10px;border-left:1px solid var(--line);width:300px;flex:none;min-width:0;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:480px){.status{width:auto;flex:1}}
+.status .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
+#statusText{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:899px){.brand{flex:1 1 100%}}
+.status.live .dot{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 30%,transparent)}
+.status.err .dot{background:var(--danger)}
+.status.paused .dot{background:var(--accent)}
+.search{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:4px 6px 4px 10px;box-shadow:var(--shadow);flex:1 1 200px;min-width:160px;max-width:420px}
+.search svg{width:16px;height:16px;color:var(--muted);flex:none}
+.search input{flex:1;min-width:0;border:0;background:transparent;outline:none;padding:5px 0;font-family:var(--font-data);font-size:13px;text-transform:uppercase}
+.search input::placeholder{color:var(--faint);text-transform:none;font-family:var(--font-ui)}
+.search input:focus-visible{outline:none}
+.search:focus-within{border-color:var(--accent)}
+.ibtn{width:36px;height:36px;border-radius:var(--radius);border:1px solid var(--line);background:var(--panel);display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);color:var(--fg);flex:none;padding:0}
+.ibtn svg{width:18px;height:18px}
+.ibtn:hover{background:var(--panel-2)}
+.ibtn.on{color:var(--accent);border-color:var(--accent)}
+.ibtn:focus-visible,.search input:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tools{display:flex;gap:6px;margin-left:auto} /* pinned to the right edge */
+
+/* Aircraft markers. Each icon is drawn twice: a thick halo copy underneath (its color depends on the
+   map style, so planes stay readable over satellite imagery and separate from each other when they
+   overlap), then the altitude-colored body on top. */
+.ac{position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#9aa5b1;transition:opacity .4s;--halo:rgba(8,12,18,.7);--halo-w:2.4}
+.ac>svg{width:22px;height:22px;overflow:visible;shape-rendering:geometricPrecision;filter:drop-shadow(0 0 1.5px rgba(0,0,0,.85));transition:transform .6s ease}
+.ac>svg .halo *{fill:var(--halo);stroke:var(--halo);stroke-width:var(--halo-w);stroke-linejoin:round;stroke-linecap:round;opacity:1}
+[data-map="light"] .ac,[data-map="streets"]:not(.streets-dark) .ac{--halo:#fff}
+[data-map="satellite"] .ac{--halo:#fff;--halo-w:3}
+[data-map="satellite"] .ac>svg{filter:drop-shadow(0 0 2px rgba(0,0,0,.95))}
+.ac.veh>svg{width:12px;height:12px}
+/* Ground traffic piles up at airports when zoomed out: hide it below zoom 11 (body.zoom-mid) unless
+   it is selected or squawking an emergency. It stays in the fleet, the list and search. The class goes on
+   Leaflet's marker container (not the inner .ac) so a hidden marker cannot intercept clicks either. */
+body:not(.zoom-mid) .leaflet-marker-icon.gnd-hidden{display:none}
+.ac .lbl{position:absolute;left:30px;top:50%;transform:translateY(-50%);font:500 11px/1 var(--font-data);color:var(--fg);background:color-mix(in srgb,var(--panel) 80%,transparent);padding:2px 5px;border-radius:4px;white-space:nowrap;display:none;pointer-events:none;letter-spacing:.02em}
+.labels-on .ac .lbl{display:block}
+.labels-on .ac.gnd .lbl{display:none}
+.labels-on.zoom-tight .ac.gnd .lbl{display:block} /* ground labels only from zoom 13: ramps are a pile at 12 */
+.ac.gnd>svg{width:18px;height:18px} /* parked aircraft draw a little smaller so ramps stay legible */
+.ac.stale{opacity:.4}
+/* Role badge (military star, police shield, news camera, medical cross): a disc at the top-right corner of the
+   marker box, outside the rotated svg so it always stays upright; the callsign label moves over to make room. */
+.ac .bdg{position:absolute;top:-4px;right:-3px;width:13px;height:13px;border-radius:50%;display:none;pointer-events:none;box-shadow:0 0 0 1px rgba(255,255,255,.9),0 1px 3px rgba(0,0,0,.7)}
+.ac.badged .bdg{display:block}
+.ac .bdg svg{display:block;width:100%;height:100%}
+.ac.badged .lbl{left:33px}
+.ac.gnd .bdg{top:-2px;right:-1px;width:11px;height:11px}
+.ac.sel::before,.ac.emg::before{content:"";position:absolute;inset:-3px;border:2px solid var(--accent);border-radius:50%}
+.ac.emg::before{border-color:var(--danger);animation:pulse 1s ease-in-out infinite}
+.ac.sel{z-index:5}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:.35}}
+@media (prefers-reduced-motion:reduce){.ac>svg{transition:none}.ac.emg::before{animation:none}}
+
+/* Airport markers: a small diamond with the IATA code beside it; the name appears when zoomed in. They sit in
+   their own pane under the aircraft, so an aircraft over an airport always wins the click; the diamond and the
+   code label take clicks (zoom to the airport), the rest of the marker box does not. */
+.leaflet-marker-icon.apt-icon{pointer-events:none}
+.apt-icon.hide{display:none}
+.apt{position:relative;width:10px;height:10px;color:var(--muted);opacity:.85}
+.apt .glyph{position:absolute;inset:1px;border:1.5px solid currentColor;border-radius:1px;transform:rotate(45deg);background:color-mix(in srgb,var(--bg) 55%,transparent);pointer-events:auto;cursor:pointer}
+.apt .glyph:hover{border-color:var(--accent)}
+.apt .lbl{position:absolute;left:14px;top:50%;transform:translateY(-50%);white-space:nowrap;text-shadow:0 0 2px var(--bg),0 0 3px var(--bg),0 1px 2px var(--bg);pointer-events:auto;cursor:pointer}
+.apt .lbl:hover .code{color:var(--accent);opacity:1}
+.apt .code{display:block;font:600 11px/1 var(--font-display);letter-spacing:.08em;color:var(--fg);opacity:.8}
+.apt .gcount{font:500 10px/1 var(--font-data);letter-spacing:0;color:var(--muted);margin-left:6px} /* "12 on ground" while ground traffic is hidden */
+.apt .gcount:empty{display:none}
+.apt .name{display:none;font:400 10px/1.1 var(--font-ui);margin-top:2px}
+.apt-icon.named .apt .name{display:block}
+.apt.t3{color:var(--faint)}
+.apt.t3 .glyph{inset:2px;border-width:1.2px}
+.apt.t3 .code{font-size:10px;opacity:.65}
+
+/* Legend */
+#legend{position:absolute;z-index:900;left:max(10px,env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px;box-shadow:var(--shadow);width:150px}
+#legend .bar{height:6px;border-radius:3px;background:linear-gradient(90deg,#8e99a6 0 8%,#f6c448 8%,#f0963c 18%,#78c85a 32%,#3cbeaa 46%,#4696eb 62%,#6e6ef0 78%,#b95fe6 92%,#e65ac8)}
+#legend .ticks{display:flex;justify-content:space-between;font:500 9px/1 var(--font-data);color:var(--muted);margin-top:4px;letter-spacing:.02em}
+#legend .cap{font:600 10px/1 var(--font-display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+#legend .wx{font:500 9px/1.2 var(--font-data);color:var(--muted);margin-top:6px;padding-top:5px;border-top:1px solid var(--line)}
+#legend .keys{display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:6px;padding-top:5px;border-top:1px solid var(--line);font:500 9px/1.2 var(--font-data);color:var(--muted)}
+#legend .keys span{display:inline-flex;align-items:center;gap:3px}
+#legend .keys svg{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.5)}
+/* overlays: range rings (own SVG pane) and the rain radar tiles; neither takes pointer events */
+.leaflet-rings-pane,.leaflet-weather-pane{pointer-events:none}
+.ring{stroke:var(--fg);stroke-opacity:.35;stroke-dasharray:3 5}
+.ring-c{stroke:var(--fg);stroke-opacity:.6;fill:var(--fg);fill-opacity:.6}
+.ring-lbl{font:500 10px/1 var(--font-data);color:var(--fg);opacity:.7;white-space:nowrap;transform:translate(-50%,-115%);text-shadow:0 0 3px var(--bg),0 0 3px var(--bg)}
+.field label small{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:2px}
+
+/* Detail panel */
+#panel{position:absolute;z-index:1100;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0;
+  left:0;right:0;bottom:0;max-height:64%;border-radius:16px 16px 0 0;
+  padding-bottom:env(safe-area-inset-bottom,0px);transform:translateY(105%);transition:transform .25s ease}
+#panel.open{transform:none}
+@media (prefers-reduced-motion:reduce){#panel{transition:none}}
+@media (min-width:900px){
+  #panel{left:auto;right:max(10px,env(safe-area-inset-right,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));width:380px;max-height:none;border-radius:14px;transform:translateX(120%)}
+  #panel.open{transform:none}
+}
+.ph{display:flex;align-items:center;gap:8px;padding:8px 12px 6px;border-bottom:1px solid var(--line);flex:none}
+.ph .grab{width:36px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto 6px;display:block}
+@media (min-width:900px){.ph .grab{display:none}}
+.ph h2{margin:0;font:600 13px/1 var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);flex:1}
+.pbody{overflow:auto;padding:10px 12px 14px;min-width:0;overscroll-behavior:contain}
+.ac-head{display:flex;gap:10px;align-items:flex-start}
+.ac-head .cs{font:700 34px/1 var(--font-display);letter-spacing:.02em;min-width:0}
+.ac-head .op{color:var(--muted);font-size:13px;margin-top:3px}
+.badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.badge{font:600 10px/1 var(--font-display);letter-spacing:.08em;text-transform:uppercase;padding:4px 6px;border-radius:4px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted)}
+.badge.mil{color:var(--mil);border-color:var(--mil)}
+.badge.emg{color:#fff;background:var(--danger);border-color:var(--danger)}
+.badge.gnd{color:var(--accent);border-color:var(--accent)}
+.badge.police,.list .tag.police{color:#5b8def;border-color:#5b8def}
+.badge.news,.list .tag.news{color:var(--fg);border-color:var(--muted)}
+.badge.medical,.list .tag.medical{color:var(--danger);border-color:var(--danger)}
+.photo{margin:10px 0 2px;border-radius:8px;overflow:hidden;background:var(--panel-2);border:1px solid var(--line);display:none}
+.photo img{display:block;width:100%;height:auto;max-height:240px;object-fit:cover}
+.photo .credit{font-size:11px;color:var(--muted);padding:5px 8px;line-height:1.4}
+.photo .credit a{color:var(--muted)}
+.photo .tag{display:inline-block;font:600 9px/1 var(--font-display);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:2px 4px;margin-right:6px;vertical-align:1px}
+.route{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin:10px 0 4px;padding:8px 10px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line)}
+.route .code{font:700 24px/1 var(--font-display);letter-spacing:.04em}
+.route .name{font-size:11px;color:var(--muted);line-height:1.25;margin-top:2px}
+.route .arrow{color:var(--accent)}
+.route .to{text-align:right}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}
+.tile{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font:600 10px/1 var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font:500 20px/1.15 var(--font-data);margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .s{font-size:11px;color:var(--muted);margin-top:2px}
+.rows{margin:12px 0 0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.rows li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
+.rows li .k{color:var(--muted);flex:none}
+.rows li .v{font-family:var(--font-data);font-variant-numeric:tabular-nums;text-align:right;min-width:0;overflow-wrap:anywhere}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.btn{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:7px 11px;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--line-2)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.on{border-color:var(--accent);color:var(--accent)}
+.links{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:12px;font-size:12px}
+.hint{color:var(--muted);font-size:12px;margin-top:8px}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 4px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:6px}
+.list li:hover{background:var(--panel-2)}
+.list .cs{font:600 15px/1.1 var(--font-data)}
+.list .ty{font-size:11px;color:var(--muted)}
+.list .alt{font:500 13px/1.1 var(--font-data);text-align:right;font-variant-numeric:tabular-nums}
+.list .d{font-size:11px;color:var(--muted);text-align:right}
+.list .sw{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.list .tag{font:600 9px/1 var(--font-ui);letter-spacing:.06em;padding:2px 4px;border-radius:4px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:middle}
+.list .tag.mil{color:var(--mil);border-color:var(--mil)}
+.list .tag.emg{color:var(--danger);border-color:var(--danger)}
+/* list toolbar: filter chips + sort, sticky over the rows (negative top/margin swallow the panel body's padding) */
+.ltools{position:sticky;top:-10px;z-index:2;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-10px 0 4px;padding:10px 0 8px;background:var(--panel)}
+.chip{font:600 11px/1 var(--font-ui);letter-spacing:.02em;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);color:var(--muted);cursor:pointer}
+.chip:hover{color:var(--fg)}
+.chip.on{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+.lsort{margin-left:auto;font:500 12px var(--font-ui);color:var(--fg);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:5px 6px;max-width:48%}
+.lmore{display:block;width:100%;margin-top:8px;padding:9px;font:600 12px var(--font-ui);color:var(--fg);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;cursor:pointer}
+.lmore:hover{border-color:var(--line-2)}
+.empty{color:var(--muted);padding:18px 4px;text-align:center}
+
+/* Settings sheet */
+#settings{position:absolute;z-index:1200;top:calc(56px + env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));width:min(340px,calc(100vw - 20px));background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px}
+@media (max-width:899px){
+  #settings{top:auto;bottom:0;left:0;right:0;width:auto;border-radius:16px 16px 0 0;max-height:72%;overflow:auto;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+}
+#settings h3{margin:0 0 8px;font:600 13px/1 var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.field{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.field:last-of-type{border-bottom:0}
+.field label{font-size:13px}
+.field input[type=text],.field select{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:5px 8px;max-width:58%;min-width:0;font-family:var(--font-data);font-size:12px}
+.field input[type=range]{width:120px;accent-color:var(--accent)}
+.field input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.field .val{font-family:var(--font-data);font-size:12px;color:var(--muted);min-width:44px;text-align:right}
+.note{font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.4}
+
+/* Blocked / offline banner */
+#blocked{position:absolute;z-index:1300;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom,0px));width:min(460px,calc(100vw - 24px));background:var(--panel);border:1px solid var(--accent);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;font-size:13px;line-height:1.45}
+#blocked b{font-family:var(--font-display);font-size:15px;letter-spacing:.04em;text-transform:uppercase}
+#blocked .x{float:right;background:none;border:0;color:var(--muted);font-size:18px;line-height:1;padding:0 2px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map" role="application" aria-label="Live aircraft map"></div>
+
+  <header id="top">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/><path d="M12 12 L20.5 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>
+      <h1>FlightScope</h1>
+      <div class="status" id="status"><span class="dot"></span><span id="statusText">Connecting…</span></div>
+    </div>
+    <label class="search" aria-label="Search aircraft">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Callsign, tail, hex, type…" autocomplete="off" spellcheck="false">
+    </label>
+    <div class="tools">
+      <button class="ibtn" id="btnList" title="Nearby aircraft" aria-label="Nearby aircraft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+      <button class="ibtn" id="btnLocate" title="Center on my location" aria-label="Center on my location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button>
+      <button class="ibtn" id="btnPause" title="Pause updates" aria-label="Pause updates"><svg id="icoPause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg><svg id="icoPlay" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" hidden><path d="M7 4l13 8-13 8z"/></svg></button>
+      <button class="ibtn" id="btnSettings" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+    </div>
+  </header>
+
+  <div id="legend" aria-hidden="true">
+    <div class="cap">Altitude</div>
+    <div class="bar"></div>
+    <div class="ticks"><span>GND</span><span>5k</span><span>15k</span><span>30k</span><span>45k</span></div>
+    <div class="keys"></div>
+    <div class="wx" hidden></div>
+  </div>
+
+  <aside id="panel" aria-label="Aircraft details">
+    <div class="ph">
+      <span class="grab"></span>
+      <h2 id="panelTitle">Aircraft</h2>
+      <button class="ibtn" id="btnClose" title="Close" aria-label="Close panel" style="width:30px;height:30px;box-shadow:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="pbody" id="pbody"></div>
+  </aside>
+
+  <div id="settings" hidden>
+    <h3>Settings</h3>
+    <div class="field"><label for="sProxy">Data relay URL</label><input type="text" id="sProxy" placeholder="http://127.0.0.1:8787/api"></div>
+    <div class="field"><label for="sInterval">Refresh</label><select id="sInterval"><option value="3">every 3 s</option><option value="5">every 5 s</option><option value="10">every 10 s</option><option value="20">every 20 s</option></select></div>
+    <div class="field"><label for="sRadius">Max search radius</label><span><input type="range" id="sRadius" min="25" max="250" step="5"><span class="val" id="sRadiusVal"></span></span></div>
+    <div class="field"><label for="sTrailMin">Keep trails for</label><select id="sTrailMin"><option value="15">15 min</option><option value="30">30 min</option><option value="60">1 hour</option><option value="120">2 hours</option></select></div>
+    <div class="field"><label for="sTrails">Trail for selected aircraft</label><input type="checkbox" id="sTrails"></div>
+    <div class="field"><label for="sLabels">Callsign labels</label><input type="checkbox" id="sLabels"></div>
+    <div class="field"><label for="sAirports">Airport markers</label><input type="checkbox" id="sAirports"></div>
+    <div class="field"><label for="sTheme">Map style</label><select id="sTheme"><option value="auto">Match device</option><option value="dark">Dark</option><option value="light">Light</option><option value="satellite">Satellite</option><option value="streets">Streets (OSM)</option></select></div>
+    <div class="field"><label for="sUnits">Units</label><select id="sUnits"><option value="aviation">ft · kt · nm</option><option value="metric">m · km/h · km</option></select></div>
+    <div class="field"><label for="sStart">On launch <small>Goes to your location; stays where you left it if location is off.</small></label><select id="sStart"><option value="0">Where I left the map</option><option value="2000">My location</option><option value="10000">My location</option><option value="35000">My location</option></select></div>
+    <div class="field"><label for="sRings">Range rings <small>Centred where you switch them on; Locate moves them to you.</small></label><input type="checkbox" id="sRings"></div>
+    <div class="field"><label for="sWeather">Rain radar overlay <small>Latest RainViewer frame, refreshed every 5 min.</small></label><input type="checkbox" id="sWeather"></div>
+    <p class="note" id="srcNote"></p>
+    <p class="note"><a id="privacyLink" href="privacy" target="_blank" rel="noopener">Privacy &amp; data sources</a></p>
+  </div>
+
+  <div id="blocked" hidden role="status">
+    <button class="x" id="blockedClose" aria-label="Dismiss">×</button>
+    <b>No live feed reachable</b><br>
+    <span id="blockedText">This viewer is blocking the map tiles or the flight feed. Open this file in Safari or Chrome, or point the relay URL in settings at your deployed FlightScope relay.</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(() => {
+'use strict';
+if (!window.L) { document.getElementById('statusText').textContent = 'Map library did not load'; return; }
+const $ = s => document.querySelector(s);
+const DEFAULT_VIEW = { lat: 40.72, lon: -73.84, zoom: 9 }; // New York airspace: JFK, LGA, EWR
+const KEY = 'flightscope.v1';
+const DEFAULTS = { proxy: '', interval: 5, trails: true, labels: true, airports: true, maxRadius: 150, trailMin: 60, theme: 'auto', listSort: 'dist', listFilter: 'all', units: 'aviation', rings: false, ringsAt: null, weather: false, startView: 2000 };
+
+/* ---------- persistence (per-browser convenience only) ---------- */
+function load(k, fb) { try { const v = localStorage.getItem(KEY + '.' + k); return v == null ? fb : JSON.parse(v); } catch (e) { return fb; } }
+function save(k, v) { try { localStorage.setItem(KEY + '.' + k, JSON.stringify(v)); } catch (e) {} }
+const settings = Object.assign({}, DEFAULTS, load('settings', {}));
+for (const k of Object.keys(settings)) if (!(k in DEFAULTS)) delete settings[k]; // keys from older versions (e.g. follow) are dropped
+
+/* ---------- helpers ---------- */
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const isNum = v => typeof v === 'number' && isFinite(v);
+const fmtInt = n => Math.round(n).toLocaleString('en-US');
+const COMPASS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const compass = d => COMPASS[Math.round((((d % 360) + 360) % 360) / 22.5) % 16];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function altColor(alt) {
+  if (alt === 'ground') return '#8e99a6';
+  if (!isNum(alt)) return '#9aa5b1';
+  if (alt < 100) return '#8e99a6';
+  const stops = [[0,[246,196,72]],[2500,[240,150,60]],[7000,[120,200,90]],[13000,[60,190,170]],[22000,[70,150,235]],[32000,[110,110,240]],[40000,[185,95,230]],[48000,[230,90,200]]];
+  let i = 0; while (i < stops.length - 1 && alt > stops[i + 1][0]) i++;
+  const [a0, c0] = stops[i], [a1, c1] = stops[Math.min(i + 1, stops.length - 1)];
+  const t = a1 === a0 ? 0 : clamp((alt - a0) / (a1 - a0), 0, 1);
+  const c = c0.map((v, k) => Math.round(v + (c1[k] - v) * t));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+const CATS = { A0:'No category', A1:'Light (< 15,500 lb)', A2:'Small (15,500–75,000 lb)', A3:'Large (75,000–300,000 lb)', A4:'High-vortex large', A5:'Heavy (> 300,000 lb)', A6:'High performance', A7:'Rotorcraft', B1:'Glider / sailplane', B2:'Lighter-than-air', B3:'Parachutist', B4:'Ultralight', B6:'UAV / drone', B7:'Space vehicle', C1:'Emergency vehicle', C2:'Service vehicle', C3:'Point obstacle', C4:'Cluster obstacle', C5:'Line obstacle' };
+const HELI_TYPES = /^(AS\d|EC\d|H\d\d|R\d\d|B06|B407|B412|B429|S76|S92|A109|A139|A169|A189|AW\d|UH\d|AH\d|H60|B105|MD\d\d|EH10|G2CA|LYNX|PUMA|NH90|CH47|H47|V22)/;
+const isHeli = a => a.category === 'A7' || (a.t && HELI_TYPES.test(a.t));
+const isVeh = a => /^C[12]$/.test(a.category || '');
+const squawkAlert = a => a.squawk === '7500' ? 'Hijack code 7500' : a.squawk === '7600' ? 'Radio failure 7600' : a.squawk === '7700' ? 'Emergency 7700' : (a.emergency && a.emergency !== 'none') ? 'Emergency: ' + a.emergency : null;
+/* ---------- marker shapes and role badges ----------
+   Aircraft outlines are given as the right half of a top view (nose at the top, x ≥ 12, in a 24×24 box) and
+   mirrored by sym(). Which outline an aircraft gets is decided by shapeFor(): its type code's class from
+   TYPE_CLASS (filled with TYPE_WIKI further down), else a military-only type, else the emitter category, else
+   the generic plane. Badges are small discs at the icon's top-right corner that do not rotate with it. */
+const num = v => String(Math.round(v * 100) / 100);
+const sym = pts => 'M' + pts.concat(pts.slice(1, -1).reverse().map(([x, y]) => [24 - x, y])).map(([x, y]) => num(x) + ' ' + num(y)).join('L') + 'Z';
+const star = (cx, cy, ro, ri) => { const p = []; for (let i = 0; i < 10; i++) { const r = i % 2 ? ri : ro, t = -Math.PI / 2 + i * Math.PI / 5; p.push(num(cx + r * Math.cos(t)) + ' ' + num(cy + r * Math.sin(t))); } return 'M' + p.join('L') + 'Z'; };
+const ICONS = {
+  // generic: mid-set, lightly swept wings, nothing else
+  plane: '<path d="' + sym([[12, 1.4], [13, 3], [13.1, 8.2], [21.8, 11.8], [21.8, 13.4], [13.2, 12.4], [13, 18.6], [16.2, 20.4], [16.2, 21.6], [12, 21.4]]) + '"/>',
+  // light prop plane: straight wings well forward, short nose with a thin propeller line
+  ga: '<path d="' + sym([[12, 2], [13, 3.4], [13.1, 6.4], [22.4, 6.8], [22.4, 8.8], [13.2, 9.6], [13, 18.6], [16.4, 19.8], [16.4, 21], [12, 21.2]]) + '"/><rect x="9.2" y="1.4" width="5.6" height="1.1" rx=".55"/>',
+  // business jet: slim body, small swept wings set back, engines as a bulge on the rear fuselage, wide tailplane
+  bizjet: '<path d="' + sym([[12, 1], [12.9, 2.8], [13, 10.4], [20.6, 15.8], [20.6, 17], [13.1, 14.2], [13.1, 15.4], [14.3, 15.6], [14.3, 18], [13.1, 18.2], [13, 19], [16.6, 20.6], [16.6, 21.8], [12, 21.8]]) + '"/>',
+  // airliner: long body, big swept wings, conventional tail
+  airliner: '<path d="' + sym([[12, 0.8], [13.1, 2.6], [13.3, 8.4], [22.6, 14.4], [22.6, 15.8], [13.4, 12.8], [13.3, 18.6], [16.9, 20.8], [16.9, 22], [12, 21.6]]) + '"/>',
+  // fighter: needle nose, strakes into trapezoid wings, big tailplane, exhaust
+  fighter: '<path d="' + sym([[12, 0.4], [12.7, 3.6], [12.9, 9.2], [13.6, 11], [21, 16.2], [21, 17.4], [14, 16.8], [14, 18.6], [17.4, 20.8], [17.4, 21.8], [13.2, 20.8], [12, 22.2]]) + '"/>',
+  // heavy military jet (transport, tanker, AWACS, bomber): fat body, wide high wing with two engines each side, T-tail
+  miljet: '<path d="' + sym([[12, 1.2], [13.8, 3.2], [14, 8], [15.4, 8.75], [15.4, 7.3], [17, 7.3], [17, 9.6], [18.8, 10.55], [18.8, 9.1], [20.4, 9.1], [20.4, 11.4], [23.4, 13], [23.4, 14.4], [14, 12.6], [13.9, 18.4], [18.4, 20.2], [18.4, 21.4], [12, 21.6]]) + '"/>',
+  // military turboprop (Hercules, Orion): blunt nose, straight high wing with two engines each side, big tailplane
+  milprop: '<path d="' + sym([[12, 1.6], [13.9, 3.4], [14, 7.4], [15.3, 7.4], [15.3, 5.9], [16.9, 5.9], [16.9, 7.4], [19, 7.4], [19, 5.9], [20.6, 5.9], [20.6, 7.4], [23.2, 7.6], [23.2, 9.4], [14, 10.6], [13.8, 18.4], [18, 19.6], [18, 21], [12, 21.4]]) + '"/>',
+  // helicopter: cabin, boom, tail rotor, four rotor blades
+  heli: '<ellipse cx="12" cy="11.8" rx="3" ry="4.8"/><path d="M12 16.4v4.4M9.5 20.6h5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M4.6 4.4l14.8 14.8M19.4 4.4L4.6 19.2" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".9"/>',
+  veh: '<rect x="4" y="4" width="16" height="16" rx="3"/>',
+};
+const BADGES = { // role → marker badge (16×16), panel badge name, list tag
+  mil: { name: 'Military', tag: 'MIL', svg: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#1d2b4f"/><circle cx="8" cy="8" r="6.6" fill="none" stroke="#f3c64a" stroke-width=".9"/><path fill="#f3c64a" d="' + star(8, 8, 5.4, 2.2) + '"/></svg>' },
+  police: { name: 'Police', tag: 'POLICE', svg: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#1d4ed8"/><path fill="#fff" d="M8 2.2l4.6 1.7v3.9c0 3-2 5.2-4.6 6.2C5.4 13 3.4 10.8 3.4 7.8V3.9z"/><path fill="#1d4ed8" d="' + star(8, 8.3, 2.7, 1.1) + '"/></svg>' },
+  news: { name: 'News', tag: 'NEWS', svg: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#f4f6f8"/><rect x="2.1" y="5.7" width="11.8" height="7" rx="1.2" fill="#1b1f27"/><rect x="5.3" y="4" width="5.4" height="2.4" rx=".8" fill="#1b1f27"/><circle cx="8" cy="9.2" r="2.4" fill="#f4f6f8"/><circle cx="8" cy="9.2" r="1.2" fill="#1b1f27"/></svg>' },
+  medical: { name: 'Medical', tag: 'MED', svg: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#d93a3a"/><path fill="#fff" d="M6.5 3.2h3v3.3h3.3v3h-3.3v3.3h-3V9.5H3.2v-3h3.3z"/></svg>' },
+};
+// Military: the feed's db flag, a military-only type code, or a service named as the operator.
+const MIL_TYPES = /^(F1[4-8]\w?|F2[02]|F35|F4|F5[A-Z]?|A10|T38|T45|T7|TEX2|HAWK|EUFI|RFAL|TOR|M346|L39|AJET|SU\d\d|MG\d\d|B1|B2|B52|U2|C17|C130|C30J|C5M?|C2|E2|E3[TC]F|E6|P3|P8|K35[RE]|R135|VC25|A400|UH1\w?|H60|H53\w?|CH47|H47|AH64|AH1\w?|V22|NH90|LYNX|T50|SB39|MIR2|M2K)$/;
+const MIL_OPS = /\b(AIR FORCE|ARMY|NAVY|MARINE CORPS|MARINES|NATIONAL GUARD|COAST GUARD|DEPT\.? OF DEFENSE|DEPARTMENT OF DEFENSE|USAF|USN|USMC|LUFTWAFFE|MILITARY)\b/;
+const opText = a => ((a.flight || '').trim() + ' ' + (a.ownOp || '')).toUpperCase();
+const isMil = a => !!(a.dbFlags & 1) || (!!a.t && MIL_TYPES.test(a.t)) || MIL_OPS.test(opText(a));
+// Roles come from the operator name (FAA registry via the feed) and the callsign; first match wins.
+const ROLES = [
+  ['medical', /\b(MEDEVAC|MEDIVAC|MEDFLIGHT|MED ?FLIGHT|AIR ?MED\w*|AEROMED\w*|LIFE ?FLIGHT|LIFE ?NET|LIFE ?STAR|LIFE ?LINE|LIFEGUARD|CARE ?FLIGHT|AIR ?AMBULANCE|AMBULANCE|MERCY ?FLIGHT|ANGEL ?FLIGHT|STAT ?MEDEVAC|AIR ?EVAC\w*|MEDICAL|MEDIC|MEDTRANS|HOSPITAL|HEALTH (SYSTEM|NETWORK|SERVICES?)|SKYHEALTH|NORTHWELL|AIR METHODS|PHI AIR|GLOBAL MEDICAL|GUARDIAN FLIGHT|REACH AIR|EMS)\b|^(LN|MED|EVAC|LIFE)\d/],
+  ['police', /\b(POLICE|SHERIFF|NYPD|LAPD|TROOPERS?|STATE PATROL|HIGHWAY PATROL|PUBLIC SAFETY|LAW ENFORCEMENT|CUSTOMS|BORDER PROTECTION|CBP|HOMELAND SECURITY|DEA|FBI|MARSHALS?|CONSTABULARY|GENDARMERIE|POLICIA|POLIZEI|CARABINIERI)\b/],
+  ['news', /\b(NEWS\w*|TELEVISION|BROADCAST\w*|MEDIA|NEWSCOPTER|HELICOPTERS INC|[WK][A-Z]{2,3}[- ]?TV|SKY ?FOX|CHOPPER ?\d|CNN|MSNBC|FOX ?TELEVISION|SINCLAIR|NEXSTAR|TEGNA|HEARST|GRAY TELEVISION|SCRIPPS)\b/],
+];
+function roleOf(a) { if (isVeh(a)) return null; const s = opText(a); for (const [k, re] of ROLES) if (re.test(s)) return k; return isMil(a) ? 'mil' : null; }
+function shapeFor(a) {
+  if (isVeh(a)) return 'veh';
+  if (isHeli(a)) return 'heli';
+  const t = a.t || '', c = TYPE_CLASS[t], mil = isMil(a);
+  if (c) return c === 'airliner' && mil ? 'miljet' : c; // an Air Force 737 or KC-10 draws as a military jet, not an airliner
+  if (t && MIL_TYPES.test(t)) return 'fighter';
+  const cat = a.category || '';
+  if (cat === 'A6') return 'fighter';
+  if (/^A[345]$/.test(cat)) return mil ? 'miljet' : 'airliner';
+  return cat === 'A1' ? 'ga' : cat === 'A2' ? 'bizjet' : mil ? 'miljet' : 'plane';
+}
+
+/* ---------- map ---------- */
+const map = L.map('map', { zoomControl: false, worldCopyJump: true, attributionControl: true, tap: false });
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+/* Tile layers. Leaflet never retries a tile whose request fails, so a burst of zooming that trips a slow or
+   throttled response leaves permanent holes in the map. Every basemap here therefore gets retryTiles(), skips
+   loading tiles for the in-between zoom levels during a zoom animation (updateWhenZooming), keeps a wider ring
+   of loaded tiles around the view, and Esri requests are spread over its two hostnames so the browser's
+   per-host connection limit is less of a bottleneck. */
+const TILE_OPTS = { updateWhenZooming: false, keepBuffer: 4 };
+const ESRI = 'https://{s}.arcgisonline.com/ArcGIS/rest/services/';
+const esri = (path, opts) => retryTiles(L.tileLayer(ESRI + path + '/MapServer/tile/{z}/{y}/{x}', Object.assign({ subdomains: ['server', 'services'], maxNativeZoom: 16, maxZoom: 18, attribution: 'Tiles &copy; Esri' }, TILE_OPTS, opts || {})));
+const osm = () => retryTiles(L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', Object.assign({ maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }, TILE_OPTS)));
+const TILE_RETRY_MS = [700, 2000, 4500];
+function retryTiles(layer) {
+  layer.on('tileerror', e => {
+    const img = e.tile, n = (img._retries || 0) + 1;
+    if (!e.coords || n > TILE_RETRY_MS.length) return;
+    img._retries = n;
+    setTimeout(() => {
+      if (!img.isConnected) return; // the view moved on and Leaflet already dropped this tile
+      const url = layer.getTileUrl(e.coords);
+      img.src = n === 1 ? url : url + (url.includes('?') ? '&' : '?') + 'retry=' + n; // later tries bust a cached failure
+    }, TILE_RETRY_MS[n - 1]);
+  });
+  return layer;
+}
+const STYLES = {
+  dark:  () => L.layerGroup([esri('Canvas/World_Dark_Gray_Base'), esri('Canvas/World_Dark_Gray_Reference', { attribution: '', pane: 'overlayPane' })]),
+  light: () => L.layerGroup([esri('Canvas/World_Light_Gray_Base'), esri('Canvas/World_Light_Gray_Reference', { attribution: '', pane: 'overlayPane' })]),
+  satellite: () => L.layerGroup([esri('World_Imagery', { attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics' }), esri('Reference/World_Boundaries_and_Places', { attribution: '', pane: 'overlayPane' })]),
+  streets: () => L.layerGroup([osm()])
+};
+let tileErrors = 0, tileOk = 0, fellBack = false;
+let currentTiles = null, currentStyle = null;
+function effectiveDark() {
+  if (settings.theme === 'satellite' || settings.theme === 'dark') return true;
+  if (settings.theme === 'light') return false;
+  return matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function styleName() { return settings.theme === 'auto' ? (effectiveDark() ? 'dark' : 'light') : settings.theme; }
+function mountStyle(name) {
+  if (currentTiles) map.removeLayer(currentTiles);
+  currentStyle = name; currentTiles = STYLES[name]().addTo(map);
+  document.body.dataset.map = name; // lets CSS pick marker halo colors per map style
+  currentTiles.eachLayer(t => { t.on('tileerror', () => { tileErrors++; if (!fellBack && tileOk === 0 && tileErrors > 10 && name !== 'streets') { fellBack = true; mountStyle('streets'); } }); t.on('tileload', () => tileOk++); });
+  document.body.classList.toggle('streets-dark', name === 'streets' && effectiveDark());
+}
+function applyTheme() {
+  const root = document.documentElement;
+  if (settings.theme === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', effectiveDark() ? 'dark' : 'light');
+  const want = fellBack ? 'streets' : styleName();
+  if (want !== currentStyle) mountStyle(want);
+  document.body.classList.toggle('streets-dark', currentStyle === 'streets' && effectiveDark());
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+const view = load('view', DEFAULT_VIEW);
+map.setView([view.lat, view.lon], view.zoom);
+applyTheme();
+const trailRenderer = L.canvas({ padding: 0.6 });
+const selTrailLayer = L.layerGroup().addTo(map);
+const markerLayer = L.layerGroup().addTo(map);
+
+/* ---------- airports ---------- */
+/* [IATA, ICAO, name, lat, lon, tier] at the airport reference point. Tier 1 = world hubs (shown from zoom 6),
+   2 = other airline airports (from zoom 8), 3 = reliever / GA fields around New York (from zoom 10). The name
+   appears one tier deeper (zoom 9 / 10 / 11). Clicking the diamond zooms to the airport, where ground traffic shows. */
+const AIRPORTS = [
+  // New York area
+  ['JFK','KJFK','John F. Kennedy Intl',40.6413,-73.7781,1], ['EWR','KEWR','Newark Liberty Intl',40.6895,-74.1745,1],
+  ['LGA','KLGA','LaGuardia',40.7769,-73.8740,2], ['TEB','KTEB','Teterboro',40.8501,-74.0608,2],
+  ['HPN','KHPN','Westchester County',41.0670,-73.7076,2], ['ISP','KISP','Long Island MacArthur',40.7952,-73.1002,2],
+  ['SWF','KSWF','New York Stewart Intl',41.5041,-74.1048,2], ['TTN','KTTN','Trenton–Mercer',40.2767,-74.8135,2],
+  ['ACY','KACY','Atlantic City Intl',39.4576,-74.5772,2], ['ABE','KABE','Lehigh Valley Intl',40.6521,-75.4408,2],
+  ['AVP','KAVP','Wilkes-Barre/Scranton Intl',41.3385,-75.7234,2], ['FRG','KFRG','Republic',40.7288,-73.4134,3],
+  ['MMU','KMMU','Morristown Municipal',40.7994,-74.4149,3], ['CDW','KCDW','Essex County',40.8752,-74.2814,3],
+  ['LDJ','KLDJ','Linden',40.6174,-74.2446,3], ['BDR','KBDR','Sikorsky Memorial',41.1635,-73.1262,3],
+  ['HVN','KHVN','Tweed New Haven',41.2637,-72.8868,3], ['POU','KPOU','Hudson Valley Regional',41.6266,-73.8842,3],
+  ['OXC','KOXC','Waterbury–Oxford',41.4786,-73.1352,3], ['DXR','KDXR','Danbury Municipal',41.3715,-73.4822,3],
+  ['FOK','KFOK','Francis S. Gabreski',40.8437,-72.6318,3], ['WRI','KWRI','McGuire AFB',40.0156,-74.5917,3],
+  // United States
+  ['ATL','KATL','Hartsfield–Jackson Atlanta Intl',33.6407,-84.4277,1], ['LAX','KLAX','Los Angeles Intl',33.9425,-118.4081,1],
+  ['ORD','KORD','Chicago O’Hare Intl',41.9742,-87.9073,1], ['DFW','KDFW','Dallas/Fort Worth Intl',32.8998,-97.0403,1],
+  ['DEN','KDEN','Denver Intl',39.8561,-104.6737,1], ['SFO','KSFO','San Francisco Intl',37.6213,-122.3790,1],
+  ['SEA','KSEA','Seattle–Tacoma Intl',47.4502,-122.3088,1], ['LAS','KLAS','Harry Reid Intl',36.0840,-115.1537,1],
+  ['MCO','KMCO','Orlando Intl',28.4312,-81.3081,1], ['CLT','KCLT','Charlotte Douglas Intl',35.2140,-80.9431,1],
+  ['PHX','KPHX','Phoenix Sky Harbor Intl',33.4373,-112.0078,1], ['IAH','KIAH','Houston Bush Intercontinental',29.9902,-95.3368,1],
+  ['MIA','KMIA','Miami Intl',25.7959,-80.2870,1], ['BOS','KBOS','Boston Logan Intl',42.3656,-71.0096,1],
+  ['MSP','KMSP','Minneapolis–St. Paul Intl',44.8848,-93.2223,1], ['DTW','KDTW','Detroit Metropolitan',42.2162,-83.3554,1],
+  ['PHL','KPHL','Philadelphia Intl',39.8744,-75.2424,1], ['FLL','KFLL','Fort Lauderdale–Hollywood Intl',26.0742,-80.1506,2],
+  ['BWI','KBWI','Baltimore/Washington Intl',39.1774,-76.6684,2], ['SLC','KSLC','Salt Lake City Intl',40.7899,-111.9791,2],
+  ['DCA','KDCA','Reagan National',38.8512,-77.0402,2], ['IAD','KIAD','Washington Dulles Intl',38.9531,-77.4565,2],
+  ['SAN','KSAN','San Diego Intl',32.7338,-117.1933,2], ['TPA','KTPA','Tampa Intl',27.9772,-82.5311,2],
+  ['MDW','KMDW','Chicago Midway Intl',41.7868,-87.7522,2], ['HNL','PHNL','Honolulu Intl',21.3187,-157.9225,2],
+  ['OGG','PHOG','Kahului',20.8986,-156.4305,2], ['PDX','KPDX','Portland Intl',45.5898,-122.5951,2],
+  ['DAL','KDAL','Dallas Love Field',32.8481,-96.8512,2], ['AUS','KAUS','Austin–Bergstrom Intl',30.1975,-97.6664,2],
+  ['BNA','KBNA','Nashville Intl',36.1263,-86.6774,2], ['STL','KSTL','St. Louis Lambert Intl',38.7487,-90.3700,2],
+  ['HOU','KHOU','Houston Hobby',29.6454,-95.2789,2], ['OAK','KOAK','Oakland Intl',37.7126,-122.2197,2],
+  ['MSY','KMSY','New Orleans Intl',29.9934,-90.2580,2], ['RDU','KRDU','Raleigh–Durham Intl',35.8801,-78.7880,2],
+  ['SJC','KSJC','San Jose Intl',37.3639,-121.9289,2], ['SMF','KSMF','Sacramento Intl',38.6954,-121.5908,2],
+  ['SNA','KSNA','John Wayne',33.6762,-117.8675,2], ['MCI','KMCI','Kansas City Intl',39.2976,-94.7139,2],
+  ['RSW','KRSW','Southwest Florida Intl',26.5362,-81.7552,2], ['SAT','KSAT','San Antonio Intl',29.5337,-98.4698,2],
+  ['CLE','KCLE','Cleveland Hopkins Intl',41.4117,-81.8498,2], ['PIT','KPIT','Pittsburgh Intl',40.4915,-80.2329,2],
+  ['IND','KIND','Indianapolis Intl',39.7173,-86.2944,2], ['CMH','KCMH','John Glenn Columbus Intl',39.9980,-82.8919,2],
+  ['CVG','KCVG','Cincinnati/Northern Kentucky Intl',39.0488,-84.6678,2], ['MKE','KMKE','Milwaukee Mitchell Intl',42.9472,-87.8966,2],
+  ['JAX','KJAX','Jacksonville Intl',30.4941,-81.6879,2], ['BUF','KBUF','Buffalo Niagara Intl',42.9405,-78.7322,2],
+  ['ABQ','KABQ','Albuquerque Intl Sunport',35.0402,-106.6090,2], ['OMA','KOMA','Eppley Airfield',41.3032,-95.8941,2],
+  ['ANC','PANC','Ted Stevens Anchorage Intl',61.1743,-149.9962,2], ['PBI','KPBI','Palm Beach Intl',26.6832,-80.0956,2],
+  ['BDL','KBDL','Bradley Intl',41.9389,-72.6832,2], ['PVD','KPVD','Rhode Island T. F. Green Intl',41.7240,-71.4282,2],
+  ['ONT','KONT','Ontario Intl',34.0560,-117.6012,2], ['BUR','KBUR','Hollywood Burbank',34.2007,-118.3587,2],
+  ['LGB','KLGB','Long Beach',33.8177,-118.1516,2], ['ELP','KELP','El Paso Intl',31.8072,-106.3778,2],
+  ['TUS','KTUS','Tucson Intl',32.1161,-110.9410,2], ['OKC','KOKC','Will Rogers World',35.3931,-97.6007,2],
+  ['TUL','KTUL','Tulsa Intl',36.1984,-95.8881,2], ['MEM','KMEM','Memphis Intl',35.0424,-89.9767,2],
+  ['RIC','KRIC','Richmond Intl',37.5052,-77.3197,2], ['ORF','KORF','Norfolk Intl',36.8946,-76.2012,2],
+  ['SDF','KSDF','Louisville Muhammad Ali Intl',38.1744,-85.7360,2], ['BHM','KBHM','Birmingham–Shuttlesworth Intl',33.5629,-86.7535,2],
+  ['RNO','KRNO','Reno–Tahoe Intl',39.4991,-119.7681,2], ['BOI','KBOI','Boise',43.5644,-116.2228,2],
+  ['GEG','KGEG','Spokane Intl',47.6199,-117.5339,2], ['SJU','TJSJ','Luis Muñoz Marín Intl',18.4394,-66.0018,2],
+  ['CHS','KCHS','Charleston Intl',32.8986,-80.0405,2], ['SAV','KSAV','Savannah/Hilton Head Intl',32.1276,-81.2021,2],
+  ['GSO','KGSO','Piedmont Triad Intl',36.0978,-79.9373,2], ['DSM','KDSM','Des Moines Intl',41.5340,-93.6631,2],
+  ['LIT','KLIT','Clinton National',34.7294,-92.2243,2], ['ALB','KALB','Albany Intl',42.7483,-73.8017,2],
+  ['SYR','KSYR','Syracuse Hancock Intl',43.1112,-76.1063,2], ['ROC','KROC','Frederick Douglass Rochester Intl',43.1189,-77.6724,2],
+  ['BTV','KBTV','Burlington Intl',44.4719,-73.1533,2], ['PWM','KPWM','Portland Intl Jetport',43.6462,-70.3093,2],
+  ['MHT','KMHT','Manchester–Boston Regional',42.9326,-71.4357,2],
+  // Canada, Mexico, Caribbean, Central America
+  ['YYZ','CYYZ','Toronto Pearson Intl',43.6777,-79.6248,1], ['YVR','CYVR','Vancouver Intl',49.1947,-123.1792,1],
+  ['YUL','CYUL','Montréal–Trudeau Intl',45.4706,-73.7408,2], ['YYC','CYYC','Calgary Intl',51.1215,-114.0076,2],
+  ['YEG','CYEG','Edmonton Intl',53.3097,-113.5800,2], ['YOW','CYOW','Ottawa Macdonald–Cartier Intl',45.3225,-75.6692,2],
+  ['YWG','CYWG','Winnipeg Richardson Intl',49.9100,-97.2399,2], ['YHZ','CYHZ','Halifax Stanfield Intl',44.8808,-63.5086,2],
+  ['YQB','CYQB','Québec City Jean Lesage Intl',46.7911,-71.3933,2], ['MEX','MMMX','Mexico City Intl',19.4363,-99.0721,1],
+  ['CUN','MMUN','Cancún Intl',21.0365,-86.8771,2], ['GDL','MMGL','Guadalajara Intl',20.5218,-103.3111,2],
+  ['MTY','MMMY','Monterrey Intl',25.7785,-100.1069,2], ['PTY','MPTO','Tocumen Intl',9.0714,-79.3835,2],
+  ['SJO','MROC','Juan Santamaría Intl',9.9981,-84.2041,2], ['HAV','MUHA','José Martí Intl',22.9892,-82.4091,2],
+  ['NAS','MYNN','Lynden Pindling Intl',25.0390,-77.4662,2], ['MBJ','MKJS','Sangster Intl',18.5037,-77.9134,2],
+  ['SDQ','MDSD','Las Américas Intl',18.4297,-69.6689,2], ['PUJ','MDPC','Punta Cana Intl',18.5674,-68.3634,2],
+  ['BGI','TBPB','Grantley Adams Intl',13.0746,-59.4925,2], ['AUA','TNCA','Queen Beatrix Intl',12.5014,-70.0152,2],
+  // South America
+  ['GRU','SBGR','São Paulo–Guarulhos Intl',-23.4356,-46.4731,1], ['GIG','SBGL','Rio de Janeiro–Galeão Intl',-22.8100,-43.2506,2],
+  ['BSB','SBBR','Brasília Intl',-15.8711,-47.9186,2], ['EZE','SAEZ','Buenos Aires Ezeiza Intl',-34.8222,-58.5358,2],
+  ['AEP','SABE','Aeroparque Jorge Newbery',-34.5592,-58.4156,2], ['SCL','SCEL','Santiago Intl',-33.3930,-70.7858,2],
+  ['BOG','SKBO','El Dorado Intl',4.7016,-74.1469,2], ['LIM','SPJC','Jorge Chávez Intl',-12.0219,-77.1143,2],
+  ['UIO','SEQM','Quito Intl',-0.1292,-78.3575,2], ['CCS','SVMI','Simón Bolívar Intl',10.6012,-66.9912,2],
+  ['MDE','SKRG','José María Córdova Intl',6.1645,-75.4231,2],
+  // Europe
+  ['LHR','EGLL','London Heathrow',51.4700,-0.4543,1], ['LGW','EGKK','London Gatwick',51.1537,-0.1821,2],
+  ['STN','EGSS','London Stansted',51.8860,0.2389,2], ['LTN','EGGW','London Luton',51.8747,-0.3683,2],
+  ['LCY','EGLC','London City',51.5053,0.0553,2], ['MAN','EGCC','Manchester',53.3537,-2.2750,2],
+  ['BHX','EGBB','Birmingham',52.4539,-1.7480,2], ['EDI','EGPH','Edinburgh',55.9500,-3.3725,2],
+  ['GLA','EGPF','Glasgow',55.8719,-4.4331,2], ['DUB','EIDW','Dublin',53.4264,-6.2499,2],
+  ['CDG','LFPG','Paris Charles de Gaulle',49.0097,2.5479,1], ['ORY','LFPO','Paris Orly',48.7262,2.3652,2],
+  ['NCE','LFMN','Nice Côte d’Azur',43.6584,7.2159,2], ['LYS','LFLL','Lyon–Saint-Exupéry',45.7256,5.0811,2],
+  ['MRS','LFML','Marseille Provence',43.4393,5.2214,2], ['AMS','EHAM','Amsterdam Schiphol',52.3105,4.7683,1],
+  ['BRU','EBBR','Brussels',50.9010,4.4844,2], ['FRA','EDDF','Frankfurt',50.0379,8.5622,1],
+  ['MUC','EDDM','Munich',48.3537,11.7750,1], ['BER','EDDB','Berlin Brandenburg',52.3667,13.5033,2],
+  ['DUS','EDDL','Düsseldorf',51.2895,6.7668,2], ['HAM','EDDH','Hamburg',53.6304,9.9882,2],
+  ['STR','EDDS','Stuttgart',48.6899,9.2220,2], ['CGN','EDDK','Cologne Bonn',50.8659,7.1427,2],
+  ['ZRH','LSZH','Zürich',47.4582,8.5555,2], ['GVA','LSGG','Geneva',46.2381,6.1090,2],
+  ['VIE','LOWW','Vienna',48.1103,16.5697,2], ['MAD','LEMD','Madrid–Barajas',40.4983,-3.5676,1],
+  ['BCN','LEBL','Barcelona–El Prat',41.2974,2.0833,1], ['PMI','LEPA','Palma de Mallorca',39.5517,2.7388,2],
+  ['AGP','LEMG','Málaga–Costa del Sol',36.6749,-4.4991,2], ['LIS','LPPT','Lisbon',38.7756,-9.1354,2],
+  ['OPO','LPPR','Porto',41.2481,-8.6814,2], ['FCO','LIRF','Rome Fiumicino',41.8003,12.2389,1],
+  ['MXP','LIMC','Milan Malpensa',45.6306,8.7281,2], ['LIN','LIML','Milan Linate',45.4451,9.2767,2],
+  ['BGY','LIME','Milan Bergamo',45.6739,9.7042,2], ['VCE','LIPZ','Venice Marco Polo',45.5053,12.3519,2],
+  ['NAP','LIRN','Naples',40.8860,14.2908,2], ['CPH','EKCH','Copenhagen',55.6180,12.6508,2],
+  ['ARN','ESSA','Stockholm Arlanda',59.6498,17.9239,2], ['OSL','ENGM','Oslo Gardermoen',60.1976,11.1004,2],
+  ['HEL','EFHK','Helsinki',60.3183,24.9497,2], ['KEF','BIKF','Keflavík',63.9850,-22.6056,2],
+  ['WAW','EPWA','Warsaw Chopin',52.1672,20.9679,2], ['KRK','EPKK','Kraków',50.0777,19.7848,2],
+  ['PRG','LKPR','Prague',50.1008,14.2632,2], ['BUD','LHBP','Budapest',47.4298,19.2611,2],
+  ['ATH','LGAV','Athens',37.9364,23.9445,2], ['IST','LTFM','Istanbul',41.2753,28.7519,1],
+  ['SAW','LTFJ','Istanbul Sabiha Gökçen',40.8986,29.3092,2], ['AYT','LTAI','Antalya',36.8987,30.8005,2],
+  ['OTP','LROP','Bucharest Henri Coandă',44.5711,26.0850,2], ['SOF','LBSF','Sofia',42.6967,23.4114,2],
+  ['BEG','LYBE','Belgrade',44.8184,20.3091,2], ['ZAG','LDZA','Zagreb',45.7429,16.0688,2],
+  ['SVO','UUEE','Moscow Sheremetyevo',55.9726,37.4146,2], ['DME','UUDD','Moscow Domodedovo',55.4088,37.9063,2],
+  ['LED','ULLI','St. Petersburg Pulkovo',59.8003,30.2625,2], ['KBP','UKBB','Kyiv Boryspil',50.3450,30.8947,2],
+  ['RIX','EVRA','Riga',56.9236,23.9711,2], ['TLL','EETN','Tallinn',59.4133,24.8328,2], ['VNO','EYVI','Vilnius',54.6341,25.2858,2],
+  // Middle East & Africa
+  ['DXB','OMDB','Dubai Intl',25.2532,55.3657,1], ['DWC','OMDW','Al Maktoum Intl',24.8966,55.1614,2],
+  ['AUH','OMAA','Abu Dhabi Intl',24.4330,54.6511,2], ['DOH','OTHH','Hamad Intl',25.2731,51.6081,1],
+  ['RUH','OERK','King Khalid Intl',24.9576,46.6988,2], ['JED','OEJN','King Abdulaziz Intl',21.6796,39.1565,2],
+  ['KWI','OKKK','Kuwait Intl',29.2266,47.9689,2], ['BAH','OBBI','Bahrain Intl',26.2708,50.6336,2],
+  ['MCT','OOMS','Muscat Intl',23.5933,58.2844,2], ['AMM','OJAI','Queen Alia Intl',31.7226,35.9932,2],
+  ['TLV','LLBG','Ben Gurion',32.0055,34.8854,2], ['IKA','OIIE','Tehran Imam Khomeini Intl',35.4161,51.1522,2],
+  ['CAI','HECA','Cairo Intl',30.1219,31.4056,1], ['CMN','GMMN','Casablanca Mohammed V',33.3675,-7.5898,2],
+  ['ALG','DAAG','Algiers Houari Boumediene',36.6910,3.2155,2], ['TUN','DTTA','Tunis–Carthage',36.8510,10.2272,2],
+  ['ADD','HAAB','Addis Ababa Bole',8.9779,38.7993,2], ['NBO','HKJK','Jomo Kenyatta Intl',-1.3192,36.9278,2],
+  ['JNB','FAOR','O. R. Tambo Intl',-26.1392,28.2460,1], ['CPT','FACT','Cape Town Intl',-33.9715,18.6021,2],
+  ['DUR','FALE','King Shaka Intl',-29.6144,31.1197,2], ['LOS','DNMM','Murtala Muhammed Intl',6.5774,3.3212,2],
+  ['ACC','DGAA','Kotoka Intl',5.6052,-0.1668,2], ['DSS','GOBD','Blaise Diagne Intl',14.6700,-17.0733,2],
+  ['MRU','FIMP','Sir Seewoosagur Ramgoolam Intl',-20.4302,57.6836,2],
+  // Asia
+  ['HND','RJTT','Tokyo Haneda',35.5494,139.7798,1], ['NRT','RJAA','Tokyo Narita',35.7720,140.3929,1],
+  ['KIX','RJBB','Kansai Intl',34.4347,135.2440,2], ['ITM','RJOO','Osaka Itami',34.7855,135.4382,2],
+  ['NGO','RJGG','Chubu Centrair Intl',34.8584,136.8054,2], ['CTS','RJCC','New Chitose',42.7752,141.6923,2],
+  ['FUK','RJFF','Fukuoka',33.5859,130.4507,2], ['OKA','ROAH','Naha',26.1958,127.6460,2],
+  ['ICN','RKSI','Incheon Intl',37.4602,126.4407,1], ['GMP','RKSS','Seoul Gimpo',37.5583,126.7906,2],
+  ['PUS','RKPK','Busan Gimhae',35.1795,128.9382,2], ['CJU','RKPC','Jeju Intl',33.5113,126.4930,2],
+  ['PEK','ZBAA','Beijing Capital Intl',40.0799,116.6031,1], ['PKX','ZBAD','Beijing Daxing Intl',39.5098,116.4105,2],
+  ['PVG','ZSPD','Shanghai Pudong Intl',31.1443,121.8083,1], ['SHA','ZSSS','Shanghai Hongqiao Intl',31.1979,121.3363,2],
+  ['CAN','ZGGG','Guangzhou Baiyun Intl',23.3924,113.2988,2], ['SZX','ZGSZ','Shenzhen Bao’an Intl',22.6393,113.8107,2],
+  ['CTU','ZUUU','Chengdu Shuangliu Intl',30.5785,103.9471,2], ['TFU','ZUTF','Chengdu Tianfu Intl',30.3125,104.4413,2],
+  ['CKG','ZUCK','Chongqing Jiangbei Intl',29.7192,106.6417,2], ['KMG','ZPPP','Kunming Changshui Intl',25.1019,102.9292,2],
+  ['XIY','ZLXY','Xi’an Xianyang Intl',34.4471,108.7516,2], ['HGH','ZSHC','Hangzhou Xiaoshan Intl',30.2295,120.4344,2],
+  ['WUH','ZHHH','Wuhan Tianhe Intl',30.7838,114.2081,2], ['NKG','ZSNJ','Nanjing Lukou Intl',31.7420,118.8620,2],
+  ['XMN','ZSAM','Xiamen Gaoqi Intl',24.5440,118.1277,2], ['TSN','ZBTJ','Tianjin Binhai Intl',39.1244,117.3462,2],
+  ['HKG','VHHH','Hong Kong Intl',22.3080,113.9185,1], ['MFM','VMMC','Macau Intl',22.1496,113.5916,2],
+  ['TPE','RCTP','Taiwan Taoyuan Intl',25.0797,121.2342,2], ['TSA','RCSS','Taipei Songshan',25.0694,121.5525,2],
+  ['KHH','RCKH','Kaohsiung Intl',22.5771,120.3500,2], ['MNL','RPLL','Ninoy Aquino Intl',14.5086,121.0194,2],
+  ['CEB','RPVM','Mactan–Cebu Intl',10.3099,123.9790,2], ['SIN','WSSS','Singapore Changi',1.3644,103.9915,1],
+  ['KUL','WMKK','Kuala Lumpur Intl',2.7456,101.7099,2], ['BKK','VTBS','Bangkok Suvarnabhumi',13.6900,100.7501,1],
+  ['DMK','VTBD','Bangkok Don Mueang',13.9126,100.6067,2], ['HKT','VTSP','Phuket Intl',8.1132,98.3169,2],
+  ['CGK','WIII','Jakarta Soekarno–Hatta Intl',-6.1256,106.6559,2], ['DPS','WADD','Bali Ngurah Rai Intl',-8.7482,115.1672,2],
+  ['SUB','WARR','Surabaya Juanda Intl',-7.3798,112.7869,2], ['SGN','VVTS','Tan Son Nhat Intl',10.8188,106.6520,2],
+  ['HAN','VVNB','Noi Bai Intl',21.2212,105.8072,2], ['DAD','VVDN','Da Nang Intl',16.0439,108.1994,2],
+  ['PNH','VDPP','Phnom Penh Intl',11.5466,104.8441,2], ['RGN','VYYY','Yangon Intl',16.9073,96.1332,2],
+  ['DEL','VIDP','Indira Gandhi Intl',28.5562,77.1000,1], ['BOM','VABB','Chhatrapati Shivaji Maharaj Intl',19.0896,72.8656,1],
+  ['BLR','VOBL','Kempegowda Intl',13.1989,77.7068,2], ['MAA','VOMM','Chennai Intl',12.9941,80.1709,2],
+  ['HYD','VOHS','Rajiv Gandhi Intl',17.2403,78.4294,2], ['CCU','VECC','Netaji Subhas Chandra Bose Intl',22.6547,88.4467,2],
+  ['COK','VOCI','Cochin Intl',10.1520,76.4019,2], ['CMB','VCBI','Bandaranaike Intl',7.1808,79.8841,2],
+  ['DAC','VGHS','Hazrat Shahjalal Intl',23.8433,90.3978,2], ['KTM','VNKT','Tribhuvan Intl',27.6966,85.3591,2],
+  ['KHI','OPKC','Jinnah Intl',24.9065,67.1608,2], ['LHE','OPLA','Allama Iqbal Intl',31.5216,74.4036,2],
+  ['ISB','OPIS','Islamabad Intl',33.5491,72.8258,2], ['TAS','UTTT','Tashkent Intl',41.2579,69.2812,2],
+  ['ALA','UAAA','Almaty Intl',43.3521,77.0405,2],
+  // Oceania
+  ['SYD','YSSY','Sydney Kingsford Smith',-33.9399,151.1753,1], ['MEL','YMML','Melbourne Tullamarine',-37.6690,144.8410,1],
+  ['BNE','YBBN','Brisbane',-27.3842,153.1075,2], ['PER','YPPH','Perth',-31.9385,115.9672,2],
+  ['ADL','YPAD','Adelaide',-34.9450,138.5306,2], ['CBR','YSCB','Canberra',-35.3069,149.1950,2],
+  ['OOL','YBCG','Gold Coast',-28.1644,153.5047,2], ['CNS','YBCS','Cairns',-16.8858,145.7554,2],
+  ['AKL','NZAA','Auckland',-37.0082,174.7850,2], ['WLG','NZWN','Wellington',-41.3272,174.8052,2],
+  ['CHC','NZCH','Christchurch',-43.4894,172.5320,2], ['NAN','NFFN','Nadi Intl',-17.7554,177.4434,2],
+  ['GUM','PGUM','Guam A. B. Won Pat Intl',13.4834,144.7960,2]
+];
+const AIRPORT_ZOOM = { 1: [6, 9], 2: [8, 10], 3: [10, 11] }; // tier -> [marker shows from zoom, name shows from zoom]
+map.createPane('airports').style.zIndex = 450; // above trails and reference labels (400), below aircraft (600)
+const airportLayer = L.layerGroup();
+for (const [iata, icao, name, lat, lon, tier] of AIRPORTS) {
+  const icon = L.divIcon({ className: 'apt-icon', iconSize: [10, 10], iconAnchor: [5, 5], html: `<div class="apt t${tier}"><span class="glyph"></span><span class="lbl"><span class="code">${esc(iata)}<span class="gcount"></span></span><span class="name">${esc(name)}</span></span></div>` });
+  const m = L.marker([lat, lon], { icon, pane: 'airports', keyboard: false, tier, title: `${name} · ${iata} / ${icao}` }).addTo(airportLayer);
+  m.on('click', () => map.flyTo([lat, lon], Math.max(map.getZoom(), 12), { duration: 0.8 }));
+}
+function syncAirports() {
+  if (!!settings.airports !== map.hasLayer(airportLayer)) { if (settings.airports) airportLayer.addTo(map); else map.removeLayer(airportLayer); }
+  if (!settings.airports) return;
+  const z = map.getZoom();
+  airportLayer.eachLayer(m => {
+    const el = m.getElement(); if (!el) return;
+    const [show, named] = AIRPORT_ZOOM[m.options.tier];
+    el.classList.toggle('hide', z < show); el.classList.toggle('named', z >= named);
+  });
+  updateAirportCounts();
+}
+/* While ground traffic is hidden (below GROUND_MIN_ZOOM), each visible airport label shows how many aircraft are
+   on the ground within ~4 km of its reference point, so a busy ramp is still visible from a distance. */
+let haveFeed = false; // the fleet state is declared further down; nothing to count until the first feed lands
+function updateAirportCounts() {
+  if (!haveFeed || !settings.airports || !map.hasLayer(airportLayer)) return;
+  const z = map.getZoom(), counting = z < GROUND_MIN_ZOOM, gnd = [];
+  if (counting) for (const rec of fleet.values()) { const a = rec.a; if (a.alt_baro === 'ground' && feedNow - rec.lastSeen < 60000) gnd.push(a); }
+  const b = map.getBounds().pad(0.2);
+  airportLayer.eachLayer(m => {
+    const el = m.getElement(); if (!el) return;
+    const span = el.querySelector('.gcount');
+    let n = 0;
+    if (gnd.length && !el.classList.contains('hide') && b.contains(m.getLatLng())) {
+      const ll = m.getLatLng(), dLon = 0.04 / Math.cos(ll.lat * Math.PI / 180);
+      for (const a of gnd) if (Math.abs(a.lat - ll.lat) < 0.04 && Math.abs(a.lon - ll.lng) < dLon) n++;
+    }
+    const txt = n ? `${n} on ground` : '';
+    if (span.textContent !== txt) span.textContent = txt;
+  });
+}
+
+const GROUND_MIN_ZOOM = 11; // below this, ground traffic is hidden so airports don't turn into a pile of markers
+function syncZoomClass() {
+  const z = map.getZoom(), b = document.body.classList;
+  b.toggle('labels-on', settings.labels && z >= 10);
+  b.toggle('zoom-mid', z >= GROUND_MIN_ZOOM);
+  b.toggle('zoom-close', z >= 12);
+  b.toggle('zoom-tight', z >= 13);
+  syncAirports();
+}
+map.on('zoomend', syncZoomClass); syncZoomClass();
+
+/* ---------- state ---------- */
+const fleet = new Map();     // hex -> record
+let selected = null;         // hex
+let paused = false, timer = null, lastFeedAt = 0, feedNow = 0, lastSource = '—', lastVia = null, consecutiveErrors = 0, firstSuccess = false;
+let ridingOut = false; // a missed refresh or a few after a good one: keep the picture (markers keep gliding) and say "retrying"
+const RELAY_GRACE_MS = 120000, RIDE_OUT_ERRORS = 6;
+const relayRecent = () => lastVia === 'relay' && Date.now() - lastFeedAt < RELAY_GRACE_MS;
+const photoCache = new Map(), routeCache = new Map();
+let listMode = false, query = '';
+
+/* ---------- data fetching ---------- */
+const LOCAL_RELAY = 'http://127.0.0.1:8787/api';
+function proxyBase() {
+  const s = (settings.proxy || '').trim().replace(/\/+$/, '');
+  if (s) return s;
+  if (window.FLIGHTSCOPE_RELAY) return String(window.FLIGHTSCOPE_RELAY).replace(/\/+$/, '') + '/api'; // injected by a host that embeds the page (the iOS app)
+  if (/^https?:$/.test(location.protocol)) return location.origin + '/api';
+  return LOCAL_RELAY; // opened as a file: use the relay started by FlightScope.cmd on this computer
+}
+/* Public CORS relays: last resort when no FlightScope relay is running. Slower and not guaranteed. */
+const PUBLIC_RELAYS = [
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u)
+];
+const UPSTREAM_FEED = (lat, lon, dist) => `https://opendata.adsb.fi/api/v2/lat/${lat}/lon/${lon}/dist/${dist}`;
+function currentRadius() {
+  const c = map.getCenter(), b = map.getBounds();
+  const nm = c.distanceTo(b.getNorthEast()) / 1852;
+  return clamp(Math.ceil(nm * 1.1 / 5) * 5, 10, settings.maxRadius);
+}
+function normNow(n) { if (!isNum(n)) return Date.now(); return n < 1e11 ? n * 1000 : n; }
+async function getJSON(url, opts) {
+  const r = await fetch(url, Object.assign({ cache: 'no-store', signal: AbortSignal.timeout(9000) }, opts || {}));
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+async function fetchFeed() {
+  const c = map.getCenter(), dist = currentRadius();
+  const lat = +c.lat.toFixed(3), lon = +c.lng.toFixed(3);
+  const attempts = [];
+  const pb = proxyBase();
+  if (pb) attempts.push({ via: 'relay', url: `${pb}/feed?lat=${lat}&lon=${lon}&dist=${dist}`, source: 'relay' });
+  attempts.push({ via: 'direct', url: `https://api.airplanes.live/v2/point/${lat}/${lon}/${dist}`, source: 'airplanes.live' });
+  PUBLIC_RELAYS.forEach((mk, i) => attempts.push({ via: 'public' + i, url: mk(UPSTREAM_FEED(lat, lon, dist)), source: 'adsb.fi via public relay' }));
+  if (lastVia) { const i = attempts.findIndex(a => a.via === lastVia); if (i > 0) attempts.unshift(...attempts.splice(i, 1)); }
+  // The relay answered lately, so a refused refresh is an upstream hiccup (adsb.lol rate-limits Cloudflare's shared addresses):
+  // retry it next tick instead of walking the public relays, which take up to 9 s each and are often down.
+  if (relayRecent()) attempts.length = 1;
+  let err;
+  for (const a of attempts) {
+    try {
+      const j = await getJSON(a.url);
+      const ac = j.ac || j.aircraft;
+      if (!Array.isArray(ac)) throw new Error('bad reply');
+      lastVia = a.via;
+      return { ac, now: normNow(j.now), source: j.source || a.source, dist };
+    } catch (e) { err = e; }
+  }
+  throw err || new Error('No feed');
+}
+
+/* ---------- fleet updates ---------- */
+function upsert(a, now) {
+  if (!isNum(a.lat) || !isNum(a.lon)) return;
+  const hex = (a.hex || '').toLowerCase(); if (!hex) return;
+  let rec = fleet.get(hex);
+  const seenPos = isNum(a.seen_pos) ? a.seen_pos : (isNum(a.seen) ? a.seen : 0);
+  const fixAt = now - seenPos * 1000;
+  if (!rec) {
+    rec = { hex, a, trail: [], fixAt, firstSeen: now, lastSeen: now, marker: null, root: null, el: null, svg: null, lbl: null, shape: null,
+            shown: { lat: a.lat, lon: a.lon }, rot: 0, trk: null }; // shown = where the marker is drawn right now; rot = continuous heading for the icon
+    fleet.set(hex, rec);
+  }
+  rec.a = a; rec.lastSeen = now;
+  const last = rec.trail[rec.trail.length - 1];
+  const moved = !last || Math.abs(last.lat - a.lat) > 0.00015 || Math.abs(last.lon - a.lon) > 0.00015;
+  if (fixAt > rec.fixAt || !last) {
+    rec.fixAt = fixAt;
+    if (moved && (!last || fixAt - last.t > 1500)) {
+      rec.trail.push({ lat: a.lat, lon: a.lon, alt: a.alt_baro, t: fixAt });
+      const cap = rec.hex === selected ? 6000 : 900; if (rec.trail.length > cap) rec.trail.splice(0, rec.trail.length - cap);
+    }
+  }
+  rec.dr = { lat: a.lat, lon: a.lon, t: fixAt, gs: a.gs, track: a.track, ground: a.alt_baro === 'ground' };
+  renderMarker(rec, now);
+}
+function renderMarker(rec, now) {
+  const a = rec.a, shape = shapeFor(a), role = roleOf(a);
+  if (!rec.marker || rec.shape !== shape) {
+    if (rec.marker) markerLayer.removeLayer(rec.marker);
+    const inner = ICONS[shape] || ICONS.plane;
+    const icon = L.divIcon({ className: '', iconSize: [28, 28], iconAnchor: [14, 14], html: `<div class="ac ${shape}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g class="halo">${inner}</g><g>${inner}</g></svg><span class="bdg"></span><span class="lbl"></span></div>` });
+    rec.marker = L.marker([a.lat, a.lon], { icon, keyboard: false, title: '' }).addTo(markerLayer);
+    rec.marker.on('click', () => select(rec.hex));
+    rec.shape = shape;
+    const root = rec.root = rec.marker.getElement();
+    rec.el = root.querySelector('.ac'); rec.svg = rec.el.querySelector('svg'); rec.lbl = rec.el.querySelector('.lbl'); rec.bdg = rec.el.querySelector('.bdg'); rec.role = undefined;
+  } else if (map.getZoom() < 6) {
+    rec.shown.lat = a.lat; rec.shown.lon = a.lon; rec.marker.setLatLng([a.lat, a.lon]); // the glide loop is off when zoomed far out
+  } // otherwise the animation loop glides the marker to its new fix instead of snapping
+  const trk = isNum(a.track) ? a.track : isNum(a.true_heading) ? a.true_heading : isNum(a.mag_heading) ? a.mag_heading : 0;
+  if (shape === 'veh') rec.svg.style.transform = '';
+  else { // keep a continuous angle so 350° → 10° turns 20° right, not 340° left
+    rec.rot = rec.trk == null ? trk : rec.rot + ((trk - rec.trk + 540) % 360) - 180;
+    rec.trk = trk;
+    rec.svg.style.transform = `rotate(${rec.rot}deg)`;
+  }
+  if (rec.role !== role) { rec.role = role; rec.bdg.innerHTML = role ? BADGES[role].svg : ''; rec.el.classList.toggle('badged', !!role); }
+  rec.el.style.color = altColor(a.alt_baro);
+  const cs = (a.flight || '').trim() || a.r || hexUp(a.hex);
+  if (rec.lbl.textContent !== cs) rec.lbl.textContent = cs;
+  const stale = now - rec.lastSeen > 60000 || (isNum(a.seen) && a.seen > 60);
+  rec.el.classList.toggle('stale', stale);
+  const gnd = a.alt_baro === 'ground', emg = !!squawkAlert(a);
+  rec.el.classList.toggle('gnd', gnd);
+  rec.el.classList.toggle('sel', rec.hex === selected);
+  rec.el.classList.toggle('emg', emg);
+  rec.root.classList.toggle('gnd-hidden', gnd && rec.hex !== selected && !emg);
+  rec.marker.setZIndexOffset(rec.hex === selected ? 2000 : emg ? 1500 : gnd ? -500 : 0); // airborne draws over ground traffic
+}
+/* Trails are recorded for every aircraft but drawn only for the selected one. */
+let liveSeg = null; // short segment from the last recorded fix to the marker's current (glided) position
+/* The drawn trail = OpenSky history (rec.hist, loaded by loadTrack on selection) up to the first fix this session saw,
+   then the session trail. hist stays whole, so the join moves forward by itself as the session trail is pruned. */
+function trailPoints(rec) {
+  const tr = rec.trail, h = rec.hist; if (!h || !h.length) return tr;
+  const first = tr.length ? tr[0].t - 2000 : Infinity; let k = 0; while (k < h.length && h[k].t < first) k++;
+  return k ? h.slice(0, k).concat(tr) : tr;
+}
+function renderSelectedTrail() {
+  selTrailLayer.clearLayers(); liveSeg = null;
+  const rec = selected && fleet.get(selected); if (!rec || !settings.trails) return;
+  const pts = trailPoints(rec); if (pts.length < 2) return;
+  const segs = [];
+  let cur = null, curColor = null;
+  for (let i = 1; i < pts.length; i++) {
+    const c = altColor(pts[i].alt);
+    if (c !== curColor) { cur = [[pts[i - 1].lat, pts[i - 1].lon]]; curColor = c; segs.push({ color: c, ll: cur }); }
+    cur.push([pts[i].lat, pts[i].lon]);
+  }
+  for (const s of segs) L.polyline(s.ll, { renderer: trailRenderer, color: s.color, weight: 3.2, opacity: 0.95, interactive: false }).addTo(selTrailLayer);
+  L.circleMarker([pts[0].lat, pts[0].lon], { renderer: trailRenderer, radius: 3, color: '#fff', weight: 1, fillColor: altColor(pts[0].alt), fillOpacity: 1, interactive: false }).addTo(selTrailLayer);
+}
+function prune(now) {
+  const keepMs = settings.trailMin * 60000;
+  for (const [hex, rec] of fleet) {
+    const gone = now - rec.lastSeen;
+    if (gone > 300000) {
+      if (rec.marker) markerLayer.removeLayer(rec.marker);
+      fleet.delete(hex);
+      if (selected === hex) { selected = null; renderPanel(); renderSelectedTrail(); }
+      continue;
+    }
+    const cut = now - keepMs;
+    if (hex !== selected && rec.trail.length && rec.trail[0].t < cut) { let i = 0; while (i < rec.trail.length && rec.trail[i].t < cut) i++; rec.trail.splice(0, i); } // the selected aircraft keeps its whole session trail
+  }
+}
+function applyFeed(feed) {
+  feedNow = feed.now; lastFeedAt = Date.now(); lastSource = feed.source;
+  for (const a of feed.ac) upsert(a, feed.now);
+  prune(feed.now);
+  haveFeed = true; updateAirportCounts();
+  if (pendingHex && fleet.has(pendingHex)) { const h = pendingHex; pendingHex = null; window.FlightScope.select(h); }
+  if (selected) { renderSelectedTrail(); renderPanel(); if (following) { const c = map.getCenter(); save('view', { lat: c.lat, lon: c.lng, zoom: map.getZoom() }); } } // the glide loop does the following; save the view here since auto-pans skip it
+  else if (listMode) renderPanel();
+  consecutiveErrors = 0; firstSuccess = true; ridingOut = false;
+  $('#blocked').hidden = true;
+  setStatus('live', `${feed.source} · ${fleet.size} aircraft · ${fmtDist(feed.dist, 0)}`);
+  $('#srcNote').textContent = `Feed: ${feed.source}${lastVia === 'relay' ? ' via ' + proxyBase() : ''}. Photos: planespotters.net. Routes: adsb.lol.`;
+}
+function setStatus(kind, text) { const s = $('#status'); s.className = 'status ' + kind; $('#statusText').textContent = text; }
+
+/* ---------- polling loop ---------- */
+async function tick() {
+  clearTimeout(timer);
+  if (paused || document.hidden) { timer = setTimeout(tick, 1000); return; }
+  try {
+    const feed = await fetchFeed();
+    applyFeed(feed);
+  } catch (e) {
+    consecutiveErrors++;
+    ridingOut = firstSuccess && consecutiveErrors <= RIDE_OUT_ERRORS && relayRecent();
+    if (ridingOut) setStatus('live', `${lastSource} · ${fleet.size} aircraft · ${Math.round((Date.now() - lastFeedAt) / 1000)}s ago · retrying`);
+    else setStatus('err', consecutiveErrors < 3 ? 'Feed error, retrying…' : 'No feed · ' + (e && e.message ? e.message : 'blocked'));
+    if (!firstSuccess && consecutiveErrors >= 2) showBlocked();
+  }
+  const wait = consecutiveErrors && !ridingOut ? Math.min(30, settings.interval * (1 + consecutiveErrors)) : settings.interval;
+  timer = setTimeout(tick, wait * 1000);
+}
+function showBlocked() {
+  const b = $('#blocked');
+  const hasProxy = !!proxyBase();
+  $('#blockedText').textContent = (tileErrors > 2 && tileOk === 0)
+    ? 'This viewer is blocking the map tiles and the flight feed. Open this file in Chrome or Edge instead.'
+    : (hasProxy && settings.proxy ? `The relay at ${proxyBase()} did not answer. Check the relay URL in settings.`
+                : 'No relay is running on this computer and the public fallbacks did not answer. Double-click FlightScope.cmd in the FlightScope folder to start the local relay, then reload this page.');
+  b.hidden = false;
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+let moveTimer = null, autoPan = false, autoPanHold = 0;
+map.on('moveend', () => {
+  if (autoPan) return; // follow-mode pans from the glide loop: no view save, no refetch
+  const c = map.getCenter(); save('view', { lat: c.lat, lon: c.lng, zoom: map.getZoom() });
+  updateAirportCounts();
+  clearTimeout(moveTimer); moveTimer = setTimeout(() => { if (Date.now() - lastFeedAt > 1500) tick(); }, 500);
+});
+
+/* Motion between feed updates. Each aircraft has a target position (its last fix, dead-reckoned forward with
+   ground speed and track for up to 90 s) and a shown position; a ~16 fps loop glides shown toward target, so
+   markers move continuously and a new fix nudges them instead of snapping. Big jumps (a new or long-unseen
+   aircraft) teleport. The loop is idle below zoom 6, when paused, or when the tab is hidden. */
+function targetOf(rec, now) {
+  const d = rec.dr; if (!d) return null;
+  if (!d.ground && isNum(d.gs) && d.gs >= 25 && isNum(d.track)) {
+    const dt = clamp(now - d.t, 0, 90000), dNm = d.gs / 3600000 * dt, br = d.track * Math.PI / 180;
+    return { lat: d.lat + (dNm / 60) * Math.cos(br), lon: d.lon + (dNm / 60) * Math.sin(br) / Math.cos(d.lat * Math.PI / 180) };
+  }
+  return { lat: d.lat, lon: d.lon };
+}
+function updateLiveSeg(ll) {
+  const rec = fleet.get(selected); if (!rec || !settings.trails || !rec.trail.length) return;
+  if (liveSeg && !selTrailLayer.hasLayer(liveSeg)) liveSeg = null;
+  const last = rec.trail[rec.trail.length - 1], pts = [[last.lat, last.lon], ll];
+  if (!liveSeg) liveSeg = L.polyline(pts, { renderer: trailRenderer, color: altColor(rec.a.alt_baro), weight: 3.2, opacity: 0.95, interactive: false }).addTo(selTrailLayer);
+  else liveSeg.setLatLngs(pts);
+}
+let lastFrame = 0;
+function glideLoop(ts) { requestAnimationFrame(glideLoop); glide(ts); }
+requestAnimationFrame(glideLoop);
+setInterval(() => { if (!document.hidden) glide(performance.now()); }, 60); // fallback driver: glide() ignores it while rAF frames are arriving, and carries the motion at ~16 fps when they stall (occluded or embedded views)
+function glide(ts) {
+  if (ts - lastFrame < 60) return; // ~16 fps is smooth to the eye and cheap for a few hundred DOM markers
+  const dtF = Math.min(0.5, (ts - lastFrame) / 1000); lastFrame = ts;
+  if (paused || document.hidden || map.getZoom() < 6) return;
+  const now = feedNow + (Date.now() - lastFeedAt);
+  const k = 1 - Math.exp(-dtF / 0.8); // ease toward the target with a 0.8 s time constant
+  let selLL = null;
+  for (const rec of fleet.values()) {
+    if (!rec.marker) continue;
+    const t = targetOf(rec, now); if (!t) continue;
+    const s = rec.shown, dLat = t.lat - s.lat, dLon = t.lon - s.lon;
+    if (Math.abs(dLat) < 2e-7 && Math.abs(dLon) < 2e-7) { if (rec.hex === selected) selLL = [s.lat, s.lon]; continue; }
+    if (Math.abs(dLat) > 0.02 || Math.abs(dLon) > 0.03) { s.lat = t.lat; s.lon = t.lon; } // > ~2 km: teleport
+    else { s.lat += dLat * k; s.lon += dLon * k; }
+    rec.marker.setLatLng([s.lat, s.lon]);
+    if (rec.hex === selected) selLL = [s.lat, s.lon];
+  }
+  if (selLL) {
+    updateLiveSeg(selLL);
+    if (following && ts > autoPanHold) { autoPan = true; try { map.panTo(selLL, { animate: false }); } finally { autoPan = false; } }
+  }
+}
+let following = false; // the panel's Follow button, for the current selection only: never persisted, cleared by a new selection, closing the panel or dragging the map
+map.on('dragstart', () => { if (following) { following = false; if (selected) renderPanel(); } });
+
+/* ---------- selection & panel ---------- */
+const hexUp = h => (h || '').toUpperCase();
+function select(hex) {
+  const prev = selected; selected = hex; listMode = false;
+  if (prev && fleet.get(prev)) renderMarker(fleet.get(prev), feedNow);
+  const rec = fleet.get(hex);
+  if (rec) { renderMarker(rec, feedNow); renderSelectedTrail(); loadPhoto(rec); loadRoute(rec); loadTrack(rec); }
+  openPanel(); renderPanel();
+  if (hex !== prev) { following = false; if (rec) nativePost('select', { hex, callsign: (rec.a.flight || '').trim() }); } // selecting never moves the map; the panel's Follow button opts in per aircraft; the app answers with a haptic tap
+}
+function followSelected() { const rec = fleet.get(selected); if (rec && rec.marker) { autoPanHold = performance.now() + 700; map.panTo(rec.marker.getLatLng(), { animate: true, duration: 0.6 }); } } // hold keeps the glide loop from cutting the animation short
+function openPanel() { $('#panel').classList.add('open'); }
+function closePanel() { $('#panel').classList.remove('open'); const prev = selected; selected = null; following = false; listMode = false; if (prev && fleet.get(prev)) renderMarker(fleet.get(prev), feedNow); renderSelectedTrail(); }
+/* Units. The feeds report ft / kt / nm / fpm; everything shown to the user goes through units() so one setting
+   switches the panel, list, status line, legend and range rings between aviation and metric. */
+const UNITS = {
+  aviation: { alt: v => fmtInt(v) + ' ft', spd: v => fmtInt(v) + ' kt', dist: (nm, d = 1) => nm.toFixed(d) + ' nm', rate: v => fmtInt(Math.abs(v)) + ' fpm',
+    spdAlt: v => fmtInt(v * 1.15078) + ' mph · ' + fmtInt(v * 1.852) + ' km/h', legend: ['GND', '5k', '15k', '30k', '45k'], cap: 'Altitude · ft',
+    ringRadii: [5, 10, 25, 50, 100, 200], ringUnit: 'nm', ringUnitM: 1852 },
+  metric: { alt: v => fmtInt(v * 0.3048) + ' m', spd: v => fmtInt(v * 1.852) + ' km/h', dist: (nm, d = 1) => (nm * 1.852).toFixed(d) + ' km', rate: v => (Math.abs(v) * 0.00508).toFixed(1) + ' m/s',
+    spdAlt: v => fmtInt(v) + ' kt · ' + fmtInt(v * 1.15078) + ' mph', legend: ['GND', '1.5k', '4.6k', '9.1k', '13.7k'], cap: 'Altitude · m',
+    ringRadii: [10, 25, 50, 100, 200, 400], ringUnit: 'km', ringUnitM: 1000 },
+};
+const units = () => UNITS[settings.units] || UNITS.aviation;
+const fmtAltV = v => units().alt(v), fmtSpd = v => units().spd(v), fmtDist = (nm, d) => units().dist(nm, d);
+function fmtAlt(a) { if (a.alt_baro === 'ground') return 'Ground'; if (isNum(a.alt_baro)) return fmtAltV(a.alt_baro); if (isNum(a.alt_geom)) return fmtAltV(a.alt_geom); return '—'; }
+function fmtRate(v) { if (!isNum(v)) return '—'; if (Math.abs(v) < 64) return 'Level'; return (v > 0 ? '▲ ' : '▼ ') + units().rate(v); }
+function ago(ms) { if (!isNum(ms) || ms < 0) return '—'; const s = Math.round(ms / 1000); return s < 60 ? s + ' s ago' : Math.round(s / 60) + ' min ago'; }
+function distFromCenter(a) { const c = map.getCenter(); const m = c.distanceTo([a.lat, a.lon]); return m / 1852; }
+function bearingFrom(a) { const c = map.getCenter(); const φ1 = c.lat * Math.PI / 180, φ2 = a.lat * Math.PI / 180, Δλ = (a.lon - c.lng) * Math.PI / 180; const y = Math.sin(Δλ) * Math.cos(φ2), x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ); return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360; }
+function airlineGuess(a, route) {
+  if (route && route.airline_code && route.number) return `${route.airline_code} ${route.number}`;
+  return null;
+}
+function renderPanel() {
+  const body = $('#pbody');
+  if (!selected) { renderList(body); return; }
+  const rec = fleet.get(selected); if (!rec) { body.innerHTML = '<div class="empty">Aircraft left the feed.</div>'; return; }
+  const a = rec.a, now = feedNow + (Date.now() - lastFeedAt);
+  const cs = (a.flight || '').trim() || a.r || hexUp(a.hex);
+  const alert = squawkAlert(a);
+  const route = routeCache.get(cs);
+  const flightNo = airlineGuess(a, route);
+  $('#panelTitle').textContent = 'Aircraft';
+  const badges = [];
+  if (alert) badges.push(`<span class="badge emg">${esc(alert)}</span>`);
+  const roleTag = roleOf(a);
+  if (roleTag) badges.push('<span class="badge ' + roleTag + '">' + BADGES[roleTag].name + '</span>');
+  if (isMil(a) && roleTag !== 'mil') badges.push('<span class="badge mil">Military</span>');
+  if (a.dbFlags & 4) badges.push('<span class="badge">PIA</span>');
+  if (a.dbFlags & 8) badges.push('<span class="badge">LADD</span>');
+  if (a.alt_baro === 'ground') badges.push('<span class="badge gnd">On ground</span>');
+  if (a.type) badges.push(`<span class="badge">${esc(({adsb_icao:'ADS-B', adsb_icao_nt:'ADS-B (no pos)', mlat:'MLAT', tisb_icao:'TIS-B', tisb_other:'TIS-B', adsb_other:'ADS-B other', adsr_icao:'ADS-R', mode_s:'Mode S', other:'Other'})[a.type] || a.type)}</span>`);
+  if (a.category) badges.push(`<span class="badge">${esc(a.category)} · ${esc(CATS[a.category] || 'Category')}</span>`);
+  const op = a.ownOp ? esc(a.ownOp) : (route && route.airline_code ? esc(route.airline_code) : '');
+  const typeLine = [a.t, a.desc].filter(Boolean).map(esc).join(' · ') + (a.year ? ` · ${esc(a.year)}` : '');
+  const gs = isNum(a.gs) ? a.gs : null;
+  let html = `<div class="ac-head"><div style="min-width:0"><div class="cs">${esc(cs)}</div>${flightNo ? `<div class="op num">${esc(flightNo)}${op ? ' · ' + op : ''}</div>` : (op ? `<div class="op">${op}</div>` : '')}${typeLine ? `<div class="op">${typeLine}</div>` : ''}</div></div>`;
+  html += `<div class="badges">${badges.join('')}</div>`;
+  const ph = photoCache.get(rec.hex) || {};
+  let photo = '';
+  if (ph.kind === 'airframe') photo = `<a href="${esc(ph.link)}" target="_blank" rel="noopener"><img src="${esc(ph.src)}" alt="Photo of ${esc(a.r || cs)}" loading="lazy"></a><div class="credit">Photo © ${esc(ph.by)} · planespotters.net</div>`;
+  else if (ph.kind === 'type') photo = `<a href="${esc(ph.link)}" target="_blank" rel="noopener"><img src="${esc(ph.src)}" alt="${esc(ph.title)}" loading="lazy"></a><div class="credit"><span class="tag">${ph.role ? 'Similar aircraft' : 'Type photo'}</span>${esc(ph.title)}${ph.by ? ' · ' + esc(ph.by) : ''}${ph.lic ? ' · ' + esc(ph.lic) : ''} · <a href="${esc(ph.fileLink)}" target="_blank" rel="noopener">Wikimedia Commons</a></div>`;
+  else if (ph.kind === 'pending') photo = '<div class="credit">Looking for a photo…</div>';
+  else if (ph.kind === 'none' && ph.why) photo = `<div class="credit">${esc(ph.why)}</div>`;
+  html += `<div class="photo" id="photoBox" ${photo ? 'style="display:block"' : ''}>${photo}</div>`;
+  if (route && route.airports && route.airports.length >= 2) {
+    const o = route.airports[0], d = route.airports[route.airports.length - 1];
+    html += `<div class="route"><div><div class="code">${esc(o.iata || o.icao)}</div><div class="name">${esc(o.name || '')}${o.location ? '<br>' + esc(o.location) : ''}</div></div><div class="arrow">→</div><div class="to"><div class="code">${esc(d.iata || d.icao)}</div><div class="name">${esc(d.name || '')}${d.location ? '<br>' + esc(d.location) : ''}</div></div></div>`;
+    if (route.airports.length > 2) html += `<div class="hint">Via ${route.airports.slice(1, -1).map(x => esc(x.iata || x.icao)).join(', ')}</div>`;
+    if (route.plausible === false) html += '<div class="hint">Route is from the callsign database and may not match where this aircraft is right now.</div>';
+  } else if (route === null) {
+    html += '<div class="hint">Route not in the database for this callsign.</div>';
+  }
+  html += `<div class="tiles">
+    <div class="tile"><div class="k">Altitude</div><div class="v">${fmtAlt(a)}</div><div class="s">${isNum(a.alt_geom) ? 'GPS ' + fmtAltV(a.alt_geom) : ''}</div></div>
+    <div class="tile"><div class="k">Ground speed</div><div class="v">${gs != null ? fmtSpd(gs) : '—'}</div><div class="s">${gs != null ? units().spdAlt(gs) : ''}</div></div>
+    <div class="tile"><div class="k">Track</div><div class="v">${isNum(a.track) ? Math.round(a.track) + '° ' + compass(a.track) : '—'}</div><div class="s">${isNum(a.true_heading) ? 'Hdg ' + Math.round(a.true_heading) + '°' : (isNum(a.mag_heading) ? 'Mag hdg ' + Math.round(a.mag_heading) + '°' : '')}</div></div>
+    <div class="tile"><div class="k">Vertical rate</div><div class="v">${fmtRate(isNum(a.baro_rate) ? a.baro_rate : a.geom_rate)}</div><div class="s">${isNum(a.nav_altitude_mcp) ? 'Selected ' + fmtAltV(a.nav_altitude_mcp) : ''}</div></div>
+  </div>`;
+  const rows = [];
+  const add = (k, v) => { if (v != null && v !== '' && v !== '—') rows.push(`<li><span class="k">${k}</span><span class="v">${v}</span></li>`); };
+  add('Registration', a.r ? esc(a.r) : null);
+  add('ICAO hex', hexUp(a.hex));
+  add('Squawk', a.squawk ? esc(a.squawk) : null);
+  add('Airspeed', [isNum(a.ias) ? 'IAS ' + fmtSpd(a.ias) : null, isNum(a.tas) ? 'TAS ' + fmtSpd(a.tas) : null, isNum(a.mach) ? 'M' + a.mach.toFixed(2) : null].filter(Boolean).join(' · ') || null);
+  add('Autopilot', Array.isArray(a.nav_modes) && a.nav_modes.length ? esc(a.nav_modes.join(', ')) : null);
+  add('Selected heading', isNum(a.nav_heading) ? Math.round(a.nav_heading) + '°' : null);
+  add('QNH', isNum(a.nav_qnh) ? a.nav_qnh.toFixed(1) + ' hPa' : null);
+  add('Position', `${a.lat.toFixed(4)}, ${a.lon.toFixed(4)}`);
+  add('From map center', `${distFromCenter(a).toFixed(1)} nm · ${compass(bearingFrom(a))}`);
+  add('Wind', isNum(a.wd) && isNum(a.ws) ? `${Math.round(a.wd)}° / ${Math.round(a.ws)} kt` : null);
+  add('Outside air temp', isNum(a.oat) ? `${Math.round(a.oat)} °C` : null);
+  add('Last position', ago(now - rec.fixAt));
+  add('Signal', [isNum(a.rssi) ? a.rssi.toFixed(1) + ' dBFS' : null, isNum(a.messages) ? fmtInt(a.messages) + ' msgs' : null].filter(Boolean).join(' · ') || null);
+  add('Nav accuracy', [isNum(a.nic) ? 'NIC ' + a.nic : null, isNum(a.nac_p) ? 'NACp ' + a.nac_p : null, isNum(a.sil) ? 'SIL ' + a.sil : null].filter(Boolean).join(' · ') || null);
+  add('Country', a.origin_country ? esc(a.origin_country) : null);
+  const tp = trailPoints(rec), tpMin = tp.length > 1 ? Math.round((tp[tp.length - 1].t - tp[0].t) / 60000) : 0;
+  const tpNote = rec.trackBusy ? ' · loading history…' : rec.hist && rec.hist.length ? ' · with OpenSky history' : rec.trackErr ? ' · history ' + rec.trackErr : '';
+  add('Trail', tp.length > 1 ? `${tp.length} fixes · ${tpMin >= 60 ? Math.floor(tpMin / 60) + ' h ' + (tpMin % 60) + ' min' : tpMin + ' min'} · since ${new Date(tp[0].t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${tpNote}` : (rec.trackBusy ? 'loading history…' : null));
+  html += `<ul class="rows">${rows.join('')}</ul>`;
+  html += `<div class="actions"><button class="btn ${following ? 'on' : ''}" id="btnFollow">${following ? 'Following' : 'Follow'}</button><button class="btn" id="btnTrack">Reload track</button><button class="btn" id="btnCenter">Center</button>${canShare() ? '<button class="btn" id="btnShare">Share</button>' : ''}</div>`;
+  const csq = encodeURIComponent(cs);
+  html += `<div class="links"><a href="https://flightaware.com/live/flight/${csq}" target="_blank" rel="noopener">FlightAware</a><a href="https://www.flightradar24.com/${csq}" target="_blank" rel="noopener">Flightradar24</a><a href="https://globe.adsbexchange.com/?icao=${esc(a.hex)}" target="_blank" rel="noopener">ADS-B Exchange</a><a href="https://www.planespotters.net/hex/${hexUp(a.hex)}" target="_blank" rel="noopener">Planespotters</a></div>`;
+  body.innerHTML = html;
+  $('#btnFollow').onclick = () => { following = !following; renderPanel(); if (following) followSelected(); };
+  $('#btnCenter').onclick = () => { if (rec.marker) map.setView(rec.marker.getLatLng(), Math.max(map.getZoom(), 10)); };
+  $('#btnTrack').onclick = () => loadTrack(rec, true);
+  const shareBtn = $('#btnShare'); if (shareBtn) shareBtn.onclick = () => shareAircraft(rec);
+}
+/* The flight list: every aircraft in the fleet that matches the search box and the active filter chip, in the chosen
+   sort order, rendered LIST_PAGE rows at a time (a "Show more" button, auto-pressed when scrolled into view). The
+   toolbar and the <ul> are built once per visit to the list and only the rows are replaced on each feed, so an open
+   sort dropdown or a scrolled position survives the refresh. Filter and sort persist in settings. */
+const LIST_PAGE = 100;
+const LIST_FILTERS = [ // [key, chip label, empty-state text]
+  ['all', 'All', 'No aircraft in range yet.'],
+  ['air', 'Airborne', 'No airborne aircraft in range right now.'],
+  ['gnd', 'On ground', 'No aircraft on the ground in range right now.'],
+  ['heli', 'Helicopters', 'No helicopters in range right now.'],
+  ['mil', 'Military', 'No military aircraft in range right now.'],
+  ['emg', 'Alerts', 'No emergency squawks in range right now.'],
+];
+const LIST_SORTS = [['dist', 'Nearest first'], ['altDesc', 'Highest first'], ['altAsc', 'Lowest first'], ['gs', 'Fastest first'], ['cs', 'Callsign A–Z'], ['recent', 'Newest in feed']];
+function listMatch(a, f) {
+  switch (f) {
+    case 'air': return a.alt_baro !== 'ground';
+    case 'gnd': return a.alt_baro === 'ground';
+    case 'heli': return shapeFor(a) === 'heli';
+    case 'mil': return isMil(a);
+    case 'emg': return !!squawkAlert(a);
+    default: return true;
+  }
+}
+function altOf(a) { return a.alt_baro === 'ground' ? -1 : isNum(a.alt_baro) ? a.alt_baro : isNum(a.alt_geom) ? a.alt_geom : -2; }
+const LIST_CMP = {
+  dist: (x, y) => x.d - y.d,
+  altDesc: (x, y) => altOf(y.rec.a) - altOf(x.rec.a) || x.d - y.d,
+  altAsc: (x, y) => (altOf(x.rec.a) < 0) - (altOf(y.rec.a) < 0) || altOf(x.rec.a) - altOf(y.rec.a) || x.d - y.d, // ground/unknown last
+  gs: (x, y) => (isNum(y.rec.a.gs) ? y.rec.a.gs : -1) - (isNum(x.rec.a.gs) ? x.rec.a.gs : -1) || x.d - y.d,
+  cs: (x, y) => x.noId - y.noId || x.cs.localeCompare(y.cs) || x.d - y.d, // hex-only entries ("~2A3B4C") after real callsigns
+  recent: (x, y) => y.rec.firstSeen - x.rec.firstSeen || x.d - y.d,
+};
+let listShown = LIST_PAGE;
+function listRow(it) {
+  const a = it.rec.a, tags = [];
+  const role = roleOf(a);
+  if (role) tags.push('<span class="tag ' + role + '">' + BADGES[role].tag + '</span>');
+  if (isMil(a) && role !== 'mil') tags.push('<span class="tag mil">MIL</span>');
+  const al = squawkAlert(a); if (al) tags.push(`<span class="tag emg">${esc(al)}</span>`);
+  return `<li data-hex="${esc(it.rec.hex)}"><span class="cs"><span class="sw" style="background:${altColor(a.alt_baro)}"></span>${esc(it.cs)}${tags.join('')}</span><span class="alt">${fmtAlt(a)}</span><span class="ty">${esc([a.t, a.ownOp || a.desc].filter(Boolean).join(' · ')) || hexUp(a.hex)}</span><span class="d">${isNum(a.gs) ? fmtSpd(a.gs) + ' · ' : ''}${fmtDist(it.d)}</span></li>`;
+}
+function renderList(body) {
+  const q = query.trim().toUpperCase(), center = map.getCenter();
+  const filter = LIST_FILTERS.find(x => x[0] === settings.listFilter) || LIST_FILTERS[0], f = filter[0];
+  const items = []; let total = 0;
+  for (const rec of fleet.values()) {
+    const a = rec.a; total++;
+    const cs = (a.flight || '').trim();
+    if (q) {
+      const hay = [cs, a.r, a.hex, a.t, a.ownOp, a.desc, a.squawk].filter(Boolean).join(' ').toUpperCase();
+      if (!hay.includes(q)) continue;
+    }
+    if (!listMatch(a, f)) continue;
+    items.push({ rec, cs: cs || a.r || hexUp(a.hex), noId: cs || a.r ? 0 : 1, d: center.distanceTo([a.lat, a.lon]) / 1852 });
+  }
+  items.sort(LIST_CMP[settings.listSort] || LIST_CMP.dist);
+  $('#panelTitle').textContent = q ? `Matches for “${query.trim()}” · ${items.length}` : f === 'all' ? `Nearby · ${items.length} aircraft` : `${filter[1]} · ${items.length} of ${total}`;
+  let tools = body.querySelector('.ltools');
+  if (!tools) { // first render since the panel last showed something else: build the toolbar and wire it once
+    listShown = LIST_PAGE;
+    body.innerHTML = `<div class="ltools">${LIST_FILTERS.map(([k, l]) => `<button type="button" class="chip" data-f="${k}">${l}</button>`).join('')}<select class="lsort" aria-label="Sort aircraft">${LIST_SORTS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></div><ul class="list" id="llist"></ul><div id="lfoot"></div>`;
+    tools = body.querySelector('.ltools');
+    const ul = body.querySelector('#llist'), foot = body.querySelector('#lfoot');
+    tools.addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; settings.listFilter = b.dataset.f; save('settings', settings); listShown = LIST_PAGE; renderList(body); });
+    tools.querySelector('.lsort').addEventListener('change', e => { settings.listSort = e.target.value; save('settings', settings); listShown = LIST_PAGE; renderList(body); });
+    ul.addEventListener('click', e => { const li = e.target.closest('li[data-hex]'); if (!li) return; const rec = fleet.get(li.dataset.hex); if (rec && rec.marker) { select(rec.hex); const ll = rec.marker.getLatLng(); if (!map.getBounds().contains(ll)) map.setView(ll, Math.max(map.getZoom(), 9)); } });
+    foot.addEventListener('click', e => { if (e.target.closest('.lmore') && listMode && !selected) { listShown += LIST_PAGE; renderList(body); } });
+    new IntersectionObserver(es => { if (es.some(x => x.isIntersecting) && foot.isConnected && listMode && !selected) { const b = foot.querySelector('.lmore'); if (b) b.click(); } }, { root: body, rootMargin: '120px' }).observe(foot);
+  }
+  tools.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+  tools.querySelector('.lsort').value = settings.listSort;
+  const ul = body.querySelector('#llist'), foot = body.querySelector('#lfoot');
+  if (!items.length) { ul.innerHTML = ''; foot.innerHTML = `<div class="empty">${q ? 'No aircraft match that in the current area.' : filter[2]}</div>`; return; }
+  const top = items.slice(0, listShown), left = items.length - top.length;
+  ul.innerHTML = top.map(listRow).join('');
+  foot.innerHTML = left ? `<button type="button" class="lmore">Show ${Math.min(LIST_PAGE, left)} more · ${left} left</button>` : items.length > LIST_PAGE ? `<div class="hint">All ${items.length} shown.</div>` : '';
+}
+
+/* ---------- enrichment: photo, route, full track ---------- */
+/* Photo order: (1) planespotters photo of this exact airframe (by hex), (2) a real photo of the aircraft TYPE from
+   English Wikipedia's lead image (ICAO type code → article below; otherwise a search on the feed's description),
+   (3) a photo for the emitter category, (4) a generic aircraft photo. Wikimedia answers cross-origin requests, so
+   the page calls it directly; results are cached per type for 14 days in localStorage. */
+const TYPE_WIKI = {}, TYPE_CLASS = {}; // type code → Wikipedia title / marker outline (see shapeFor)
+const typeRows = (cls, rows) => rows.forEach(([title, codes]) => codes.split(' ').forEach(c => { TYPE_WIKI[c] = title; TYPE_CLASS[c] = cls; }));
+typeRows('airliner', [ // Airliners
+  ['Airbus A220','BCS1 BCS3'], ['Airbus A300','A306 A30B'], ['Airbus Beluga','A3ST'], ['Airbus A310','A310'], ['Airbus A318','A318'],
+  ['Airbus A319','A319'], ['Airbus A320 family','A320'], ['Airbus A321','A321'], ['Airbus A320neo family','A19N A20N A21N'],
+  ['Airbus A330','A332 A333'], ['Airbus A330neo','A338 A339'], ['Airbus A340','A342 A343 A345 A346'], ['Airbus A350','A359 A35K'],
+  ['Airbus A380','A388'], ['Boeing 717','B712'], ['Boeing 727','B721 B722'], ['Boeing 737','B732'], ['Boeing 737 Classic','B733 B734 B735'],
+  ['Boeing 737 Next Generation','B736 B737 B738 B739'], ['Boeing 737 MAX','B37M B38M B39M B3XM'], ['Boeing 747','B741 B742 B743 B744 B74S B74R'],
+  ['Boeing 747-8','B748'], ['Boeing Dreamlifter','BLCF'], ['Boeing 757','B752 B753'], ['Boeing 767','B762 B763 B764'],
+  ['Boeing 777','B772 B773 B77L B77W'], ['Boeing 777X','B778 B779'], ['Boeing 787 Dreamliner','B788 B789 B78X'],
+  ['McDonnell Douglas DC-9','DC91 DC92 DC93 DC94 DC95'], ['McDonnell Douglas MD-80','MD81 MD82 MD83 MD87 MD88'], ['McDonnell Douglas MD-90','MD90'],
+  ['McDonnell Douglas DC-10','DC10'], ['McDonnell Douglas MD-11','MD11'], ['Embraer E-Jet family','E170 E75S E75L E190 E195'],
+  ['Embraer E-Jet E2 family','E290 E295'], ['Embraer ERJ family','E135 E145 E45X'], ['Bombardier CRJ100/200','CRJ1 CRJ2'],
+  ['Bombardier CRJ700 series','CRJ7 CRJ9 CRJX'], ['De Havilland Canada Dash 8','DH8A DH8B DH8C DH8D'], ['ATR 42','AT43 AT45 AT46'],
+  ['ATR 72','AT72 AT75 AT76'], ['Saab 340','SF34'], ['Saab 2000','SB20'], ['Beechcraft 1900','B190'], ['Dornier 328','D328 J328'],
+  ['British Aerospace 146','B461 B462 B463 RJ85 RJ1H RJ70'], ['Fokker 100','F100'], ['Douglas DC-3','DC3'],
+]);
+typeRows('bizjet', [ // Business jets
+  ['Gulfstream II','GLF2'], ['Gulfstream III','GLF3'], ['Gulfstream IV','GLF4'], ['Gulfstream V','GLF5'], ['Gulfstream G650','GLF6'],
+  ['Gulfstream G500/G600','GA5C GA6C'], ['Gulfstream G700','GA7C'], ['Gulfstream G280','G280'], ['Gulfstream G200','GALX'], ['Gulfstream G150','G150'],
+  ['Bombardier Global Express','GLEX GL5T GL6T'], ['Bombardier Global 7500','GL7T'], ['Bombardier Challenger 300','CL30 CL35'],
+  ['Bombardier Challenger 600 series','CL60'], ['Learjet 31','LJ31'], ['Learjet 35','LJ35 LJ36'], ['Learjet 40','LJ40'], ['Learjet 45','LJ45'],
+  ['Learjet 55','LJ55'], ['Learjet 60','LJ60'], ['Learjet 70/75','LJ70 LJ75'], ['Cessna CitationJet/M2','C525 C25A C25B C25C C25M'],
+  ['Cessna Citation Mustang','C510'], ['Cessna Citation I','C500 C501'], ['Cessna Citation II','C550 C551'], ['Cessna Citation III','C650'],
+  ['Cessna Citation V','C560'], ['Cessna Citation Excel','C56X'], ['Cessna Citation Sovereign','C680'], ['Cessna Citation Latitude','C68A'],
+  ['Cessna Citation X','C750'], ['Cessna Citation Longitude','C700'], ['Embraer Phenom 100','E50P'], ['Embraer Phenom 300','E55P'],
+  ['Embraer Legacy 450/500','E545 E550'], ['Embraer Legacy 600','E35L'], ['Dassault Falcon 10','FA10'], ['Dassault Falcon 20','FA20'],
+  ['Dassault Falcon 50','FA50'], ['Dassault Falcon 900','F900'], ['Dassault Falcon 2000','F2TH'], ['Dassault Falcon 6X','FA6X'],
+  ['Dassault Falcon 7X','FA7X'], ['Dassault Falcon 8X','FA8X'], ['British Aerospace 125','H25A H25B H25C'], ['Hawker 4000','HA4T'],
+  ['Beechcraft Premier I','PRM1'], ['Beechcraft 400','BE40'], ['Honda HA-420 HondaJet','HDJT'], ['Cirrus Vision SF50','SF50'], ['Eclipse 500','EA50'],
+  ['IAI Westwind','WW24'], ['IAI Astra','ASTR'],
+]);
+typeRows('ga', [ // Turboprops and general aviation (prop-plane outline)
+  ['Mitsubishi MU-2','MU2'], ['Piaggio P.180 Avanti','P180'], ['Pilatus PC-6 Porter','PC6T'],
+  ['Pilatus PC-12','PC12'], ['Pilatus PC-24','PC24'], ['Beechcraft King Air','BE9L BE9T BE10'], ['Beechcraft Super King Air','BE20 B350 BE30'],
+  ['Piper PA-31T Cheyenne','PA31T PAY1 PAY2 PAY3 PAY4'], ['Socata TBM','TBM7 TBM8 TBM9 TBM'], ['Daher Kodiak','KODI'], ['Epic E1000','EPIC'],
+  ['Cessna 208 Caravan','C208 C08T'], ['De Havilland Canada DHC-2 Beaver','DHC2'], ['De Havilland Canada DHC-3 Otter','DHC3'],
+  ['De Havilland Canada DHC-6 Twin Otter','DHC6'],
+  // General aviation
+  ['Cessna 150','C150'], ['Cessna 152','C152'], ['Cessna 162 Skycatcher','C162'], ['Cessna 170','C170'], ['Cessna 172','C172 C72R'],
+  ['Cessna 177 Cardinal','C177'], ['Cessna 180 Skywagon','C180'], ['Cessna 182 Skylane','C182 C82R C82T'], ['Cessna 185 Skywagon','C185'],
+  ['Cessna 190','C195'], ['Cessna 206','C206 T206 P206'], ['Cessna 207','C207'], ['Cessna 210 Centurion','C210 P210 T210'], ['Cessna 310','C310 T310'],
+  ['Cessna 337 Skymaster','C337'], ['Cessna 340','C340'], ['Cessna 402','C402'], ['Cessna 404 Titan','C404'], ['Cessna 414','C414'],
+  ['Cessna 421','C421'], ['Cessna 425','C425'], ['Cessna 441 Conquest II','C441'], ['Cessna 350','COL3'], ['Cessna 400','COL4'],
+  ['Piper PA-28 Cherokee','P28A P28B P28R P28T PA28'], ['Piper PA-32 Cherokee Six','PA32 P32R P32T'], ['Piper PA-34 Seneca','PA34'],
+  ['Piper PA-44 Seminole','PA44'], ['Piper PA-46','PA46 P46T'], ['Piper PA-31 Navajo','PA31'], ['Piper PA-18 Super Cub','PA18'], ['Piper J-3 Cub','J3'],
+  ['Piper PA-22 Tri-Pacer','PA22'], ['Piper PA-24 Comanche','PA24'], ['Piper PA-30 Twin Comanche','PA30'], ['Piper PA-23 Apache','PA23'],
+  ['Piper PA-38 Tomahawk','PA38'], ['Piper PA-12 Super Cruiser','PA12'], ['Piper PA-20 Pacer','PA20'], ['Beechcraft Bonanza','BE33 BE35 BE36 B36T'],
+  ['Beechcraft Baron','BE55 BE56 BE58 B58T'], ['Beechcraft Musketeer','BE19 BE23 BE24'], ['Beechcraft Duchess','BE76'], ['Beechcraft Duke','BE60'],
+  ['Beechcraft Model 18','BE18'], ['Beechcraft Travel Air','BE95'], ['Cirrus SR20','SR20'], ['Cirrus SR22','SR22 S22T'], ['Diamond DA20','DA20 DV20'],
+  ['Diamond DA40 Diamond Star','DA40'], ['Diamond DA42','DA42'], ['Diamond DA50','DA50'], ['Diamond DA62','DA62'], ['Mooney M20','M20P M20T'],
+  ['Grumman American AA-5','AA5'], ['Grumman American AA-1','AA1'], ['American Champion Citabria','CH7A CH7B'], ['American Champion Decathlon','BL8'],
+  ['Maule M-7','M7'], ['Maule M-5','M5'], ['Aviat Husky','HUSK'], ['Extra EA-300','E300'], ['Pitts Special','PTS1 PTS2'],
+  ['Van’s Aircraft RV-4','RV4'], ['Van’s Aircraft RV-6','RV6'], ['Van’s Aircraft RV-7','RV7'], ['Van’s Aircraft RV-8','RV8'],
+  ['Van’s Aircraft RV-9','RV9'], ['Van’s Aircraft RV-10','RV10'], ['Van’s Aircraft RV-12','RV12'], ['Van’s Aircraft RV-14','RV14'],
+  ['Lancair IV','LNC4'], ['Lancair Evolution','EVOT EVOP'], ['Sonex Aircraft Sonex','SONX'], ['Zenith STOL CH 750','CH75'], ['Tecnam P2008','P208'],
+  ['Tecnam P2006T','P06T'], ['Tecnam P92 Echo','P92'], ['Flight Design CT','FDCT'], ['Pipistrel Virus','VIRU'], ['ICON A5','ICON'],
+  ['Stinson 108','S108'], ['Boeing-Stearman Model 75','ST75'], ['North American T-6 Texan','T6'], ['North American P-51 Mustang','P51'],
+  ['Glider (sailplane)','GLID'], ['Ultralight aviation','ULAC'], ['Hot air balloon','BALL'], ['Powered parachute','PARA'], ['Autogyro','GYRO'], ['Airship','SHIP'],
+]);
+typeRows('heli', [ // Helicopters
+  ['Bell 206','B06 B06T'], ['Bell 407','B407'], ['Bell 412','B412'], ['Bell 429','B429'], ['Bell 430','B430'], ['Bell 222','B222 B230'], ['Bell 212','B212'],
+  ['Bell 214','B214'], ['Bell 505 Jet Ranger X','B505'], ['Bell 47','B47G B47J'], ['Bell UH-1 Iroquois','UH1 UH1Y'], ['Robinson R22','R22'],
+  ['Robinson R44','R44'], ['Robinson R66','R66'], ['Eurocopter AS350 Écureuil','AS50'], ['Eurocopter AS355 Écureuil 2','AS55'],
+  ['Eurocopter AS365 Dauphin','AS65'], ['Eurocopter AS332 Super Puma','AS32'], ['Eurocopter EC225 Super Puma','EC25'], ['Eurocopter EC120 Colibri','EC20'],
+  ['Eurocopter EC130','EC30'], ['Eurocopter EC135','EC35'], ['Eurocopter EC145','EC45'], ['Eurocopter EC155','EC55'], ['Eurocopter EC175','EC75'],
+  ['Airbus Helicopters H160','H160'], ['Aérospatiale Gazelle','GAZL'], ['Aérospatiale Alouette III','ALO3'], ['Sikorsky UH-60 Black Hawk','H60 S70'],
+  ['Sikorsky S-76','S76'], ['Sikorsky S-92','S92'], ['Sikorsky S-61','S61'], ['Sikorsky CH-53E Super Stallion','H53 H53S'], ['Sikorsky S-64 Skycrane','S64'],
+  ['AgustaWestland AW109','A109'], ['AgustaWestland AW119 Koala','A119'], ['AgustaWestland AW139','A139'], ['AgustaWestland AW169','A169'],
+  ['AgustaWestland AW189','A189'], ['AgustaWestland AW101','EH10'], ['MD Helicopters MD 500','H500 HU50 MD52'], ['MD Helicopters MD 600','MD60'],
+  ['MD Helicopters MD Explorer','EXPL'], ['Boeing CH-47 Chinook','CH47 H47'], ['Boeing AH-64 Apache','AH64'], ['Bell Boeing V-22 Osprey','V22'],
+  ['Bell AH-1Z Viper','AH1Z'], ['Bell AH-1 Cobra','AH1'], ['Enstrom F-28','EN28'], ['Enstrom 480','EN48'], ['Schweizer S300','S300 H269'],
+  ['Kaman K-MAX','K126'], ['Guimbal Cabri G2','G2CA'], ['Westland Lynx','LYNX'], ['NHIndustries NH90','NH90'],
+]);
+typeRows('miljet', [ // Military jets other than fighters: transports, tankers, AWACS, bombers, patrol (the star badge comes from MIL_TYPES)
+  ['Boeing C-17 Globemaster III','C17'], ['Boeing KC-135 Stratotanker','K35R K35E'], ['Lockheed C-5 Galaxy','C5M C5'], ['Boeing E-3 Sentry','E3TF E3CF'],
+  ['Boeing P-8 Poseidon','P8'], ['Boeing B-52 Stratofortress','B52'], ['Boeing E-6 Mercury','E6'], ['Boeing RC-135','R135'], ['Boeing VC-25','VC25'],
+]);
+typeRows('milprop', [ // Military turboprops: four-engine transports and patrol aircraft
+  ['Lockheed C-130 Hercules','C130'], ['Lockheed Martin C-130J Super Hercules','C30J'], ['Lockheed P-3 Orion','P3'],
+  ['Northrop Grumman E-2 Hawkeye','E2'], ['Grumman C-2 Greyhound','C2'], ['Airbus A400M Atlas','A400'],
+  ['Alenia C-27J Spartan','C27J'], // twin-engine, but the four-engine outline is the nearest shape
+]);
+typeRows('fighter', [ // Fighters, bombers and jet trainers
+  ['General Dynamics F-16 Fighting Falcon','F16'], ['McDonnell Douglas F-15 Eagle','F15'], ['McDonnell Douglas F/A-18 Hornet','F18'],
+  ['Boeing F/A-18E/F Super Hornet','F18S'], ['Lockheed Martin F-35 Lightning II','F35'], ['Lockheed Martin F-22 Raptor','F22'],
+  ['Fairchild Republic A-10 Thunderbolt II','A10'], ['Northrop T-38 Talon','T38'], ['Rockwell B-1 Lancer','B1'], ['Northrop Grumman B-2 Spirit','B2'],
+  ['Lockheed U-2','U2'], ['Eurofighter Typhoon','EUFI'], ['Dassault Rafale','RFAL'], ['Boeing–Saab T-7 Red Hawk','T7'],
+  ['McDonnell Douglas T-45 Goshawk','T45'], ['BAE Systems Hawk','HAWK'], ['Panavia Tornado','TOR'], ['Aero L-39 Albatros','L39'],
+  ['Alenia Aermacchi M-346 Master','M346'],
+]);
+typeRows('ga', [['Beechcraft T-6 Texan II','TEX2']]); // turboprop trainer: prop-plane outline, star badge from MIL_TYPES
+const CAT_WIKI = { A1: 'Light aircraft', A2: 'Business jet', A3: 'Airliner', A4: 'Airliner', A5: 'Wide-body aircraft', A6: 'Fighter aircraft', A7: 'Helicopter',
+  B1: 'Glider (sailplane)', B2: 'Airship', B3: 'Parachuting', B4: 'Ultralight aviation', B6: 'Unmanned aerial vehicle', B7: 'Spacecraft',
+  C1: 'Airport crash tender', C2: 'Ground support equipment' };
+const ROLE_KEY = /:(medical|police|news|mil)$/; // typePhotoKey() suffix of a role-matched photo
+// key -> {src, link, title, by, lic, fileLink, role?, fallback?, t}. A role key only ever holds a role photo: older
+// builds saved the generic fallback there (a police EC135 for every air ambulance EC135, for 14 days), so drop those.
+const GENERIC_MIL = /^Military( aircraft| helicopter)?$/; // titles of the generic military search results saved before 2026-10-31 (bare "Military": a nameless record's "aircraft military" search)
+// A record with no type code, description or category (hex-only MLAT / TIS-B traffic) cannot be matched to a photo: hexdb.io
+// and adsbdb share the feed's database and knew none of 30 such hexes on 2026-10-31, so there is no lookup to make.
+const nameless = a => !a.t && !a.desc && !a.category;
+const typeCache = new Map(Object.entries(load('typephotos', {})).filter(([k, v]) => v && (!ROLE_KEY.test(k) || v.role) && !GENERIC_MIL.test(v.title) && !/^generic(:|$)/.test(k))); // `generic` keys: the old stand-in for nameless records
+const typeInflight = new Map();
+function saveTypeCache() { const o = {}; let n = 0; for (const [k, v] of typeCache) if (v && !v.fallback && Date.now() - v.t < 14 * 86400000 && n++ < 400) o[k] = v; save('typephotos', o); }
+const WIKI_Q = 'https://en.wikipedia.org/w/api.php?format=json&origin=*&action=query&redirects=1&prop=pageimages|info&inprop=url&piprop=thumbnail|name&pithumbsize=720&';
+async function wikiPage(params) {
+  const j = await getJSON(WIKI_Q + params);
+  if (j && j.error) throw new Error('Wikipedia: ' + j.error.code);
+  const pages = j && j.query && j.query.pages ? Object.values(j.query.pages) : [];
+  const p = pages.find(p => p.thumbnail && p.thumbnail.source);
+  return p ? { src: p.thumbnail.source, link: p.fullurl, title: p.title, file: p.pageimage } : null;
+}
+const stripHtml = s => String(s || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+const META = 'Artist|LicenseShortName|ImageDescription|Categories|ObjectName';
+const metaText = (title, m) => stripHtml([title, m.ObjectName && m.ObjectName.value, m.ImageDescription && m.ImageDescription.value, m.Categories && m.Categories.value].join(' ')); // what a file says it shows
+async function commonsCredit(file) {
+  const j = await getJSON(`https://commons.wikimedia.org/w/api.php?format=json&origin=*&action=query&prop=imageinfo&iiprop=extmetadata|url&iiextmetadatafilter=${META}&titles=File:${encodeURIComponent(file)}`);
+  const p = Object.values((j && j.query && j.query.pages) || {})[0], ii = p && p.imageinfo && p.imageinfo[0]; if (!ii) return null;
+  const m = ii.extmetadata || {};
+  return { by: stripHtml(m.Artist && m.Artist.value).slice(0, 60), lic: stripHtml(m.LicenseShortName && m.LicenseShortName.value), fileLink: ii.descriptionurl, text: metaText(file, m) };
+}
+/* Role-specific fallback photos. An aircraft that planespotters has no photo of, but whose operator marks it as
+   medical / police / news / military, gets a Commons photo of its type in that role (file search, best bitmap that
+   is not a diagram, cockpit or model), so a hospital EC-145 shows an air ambulance rather than whatever the EC145
+   article leads with. If the type has no such photo, any aircraft of its kind in that role is taken (`generic`); only
+   when Commons is unreachable does the plain type photo stand in, and then for this session only (`fallback`).
+   Military-only types (MIL_TYPES) already have military articles and skip this. */
+const ROLE_PHOTO = {
+  medical: { words: ['air ambulance', 'medevac'], generic: 'air ambulance', label: 'Air ambulance', is: /ambulance|medevac|\bmedic|\bhems\b|hospital|life ?flight/i },
+  police: { words: ['police', 'polizei'], generic: 'police', label: 'Police', is: /police|polizei|polic[ií]a|gendarmerie|sheriff|carabinieri|constabulary|law enforcement/i },
+  news: { words: ['news helicopter', 'television'], generic: 'news', label: 'News', is: /\bnews\b|television|\btv\b|broadcast/i },
+  mil: { words: ['military', 'air force'], label: 'Military', typeOk: true, is: /military|air force|\bnavy\b|\barmy\b|marine corps|luftwaffe/i },
+};
+// The military role has no `generic` query: Commons ranks "military aircraft" by caption text and led with a firefighting
+// drill (2026-10-29). A military type the type searches cannot place takes its own article photo instead, which
+// `typeOk` lets the cache keep under the role key: a C-17's or C-27J's lead image is a military photo anyway.
+// A photo for one role must not show another (the Wikipedia EC135 article leads with a police helicopter): files
+// whose name, description or categories match any other role's `is` are skipped.
+const otherRoles = role => new RegExp(Object.keys(ROLE_PHOTO).filter(r => r !== role).map(r => ROLE_PHOTO[r].is.source).join('|'), 'i');
+const COMMONS_Q = `https://commons.wikimedia.org/w/api.php?format=json&origin=*&action=query&generator=search&gsrnamespace=6&gsrlimit=10&prop=imageinfo&iiprop=url|mime|size|extmetadata&iiurlwidth=720&iiextmetadatafilter=${META}&gsrsearch=`;
+const BAD_FILE = /diagram|drawing|\bmap\b|logo|cockpit|interior|cabin|seat|engine|crash|wreck|\bmodel\b|silhouette|badge|patch|insignia|emblem|sticker|chart|\btoy\b|lego|simulator|\bsign\b|\bcrew\b|pilot/i;
+async function commonsSearch(q, avoid) {
+  const url = COMMONS_Q + encodeURIComponent(q + ' filetype:bitmap');
+  let j = await getJSON(url);
+  if (j && j.error) { await new Promise(r => setTimeout(r, 800)); j = await getJSON(url); } // MediaWiki API errors (DBConnectionError, ratelimited) arrive as HTTP 200; the DB ones are transient, so one retry
+  if (j && j.error) throw new Error('Commons: ' + j.error.code);
+  const pages = Object.values((j && j.query && j.query.pages) || {}).sort((x, y) => (x.index || 0) - (y.index || 0));
+  for (const p of pages) {
+    const ii = p.imageinfo && p.imageinfo[0], m = (ii && ii.extmetadata) || {};
+    if (!ii || !/^image\/(jpeg|png)/.test(ii.mime || '') || BAD_FILE.test(p.title) || (ii.width && ii.height && ii.width < ii.height) || (avoid && avoid.test(metaText(p.title, m)))) continue;
+    return { src: ii.thumburl || ii.url, link: ii.descriptionurl, fileLink: ii.descriptionurl, by: stripHtml(m.Artist && m.Artist.value).slice(0, 60), lic: stripHtml(m.LicenseShortName && m.LicenseShortName.value) };
+  }
+  return null;
+}
+function photoRole(a) { const r = roleOf(a); return r && !(r === 'mil' && a.t && MIL_TYPES.test(a.t)) ? r : null; }
+function typePhotoKey(a) { const code = (a.t || '').toUpperCase(), base = code ? 't:' + code : a.desc ? 'd:' + a.desc.toUpperCase() : a.category ? 'c:' + a.category : 'generic', r = photoRole(a); return r ? base + ':' + r : base; }
+const typeFailAt = new Map(); // key -> time of the last failed lookup; retried after 10 min (Wikimedia's API fails in bursts)
+function typePhoto(a) {
+  if (nameless(a)) return Promise.resolve(null); // nothing identifies this airframe: no photo beats a photo of some other aircraft
+  const key = typePhotoKey(a), c = typeCache.get(key);
+  if (c && !(c.fallback && Date.now() - c.t > 600000)) return Promise.resolve(c); // a fallback under a role key is retried after 10 min
+  if (Date.now() - (typeFailAt.get(key) || 0) < 600000) return Promise.resolve(c || null);
+  if (!typeInflight.has(key)) typeInflight.set(key, fetchTypePhoto(a, key).finally(() => typeInflight.delete(key)));
+  return typeInflight.get(key);
+}
+async function fetchTypePhoto(a, key) {
+  const code = (a.t || '').toUpperCase(), queries = [], role = photoRole(a), avoid = role ? otherRoles(role) : null, kind = isHeli(a) ? 'helicopter' : 'aircraft';
+  let searchErr = false; // a Commons search threw (outage, rate limit): whatever stands in is provisional
+  if (role) {
+    const rp = ROLE_PHOTO[role], named = TYPE_WIKI[code] || (a.desc ? a.desc.replace(/[-_/]+/g, ' ') : ''), typeName = named || kind;
+    const shown = TYPE_WIKI[code] || code || a.desc || kind, tries = []; // [Commons query, caption title]
+    // A nameless military record (hex only, as MLAT-only traffic often is) would search "aircraft military": the generic
+    // search again, which led with a firefighting drill. It takes the plain category photo like any unknown aircraft.
+    if (named || !rp.typeOk) tries.push(...rp.words.map(w => [`${typeName} ${w}`, `${rp.label} ${shown}`]));
+    if (rp.generic) tries.push([`${rp.generic} ${kind}`, `${rp.label} ${kind}`]); // no photo of this type in that role: any aircraft of its kind in it
+    for (const [q, title] of tries) {
+      let f = null; try { f = await commonsSearch(q, avoid); } catch (e) { searchErr = true; }
+      if (f) { const v = Object.assign({ title, role, t: Date.now() }, f); typeCache.set(key, v); saveTypeCache(); return v; }
+    }
+  }
+  if (TYPE_WIKI[code]) queries.push('titles=' + encodeURIComponent(TYPE_WIKI[code]));
+  if (a.desc) queries.push('generator=search&gsrlimit=1&gsrsearch=' + encodeURIComponent(a.desc.replace(/[-_/]+/g, ' ') + ' aircraft'));
+  queries.push('titles=' + encodeURIComponent(CAT_WIKI[a.category] || 'Fixed-wing aircraft'));
+  let r = null;
+  for (const q of queries) {
+    try { r = await wikiPage(q); } catch (e) { r = null; }
+    if (r && r.file) { try { Object.assign(r, await commonsCredit(r.file)); } catch (e) {} }
+    if (r && avoid && avoid.test((r.file || '') + ' ' + (r.text || ''))) r = null; // the article leads with another role's aircraft
+    if (r) break;
+  }
+  const v = r ? { src: r.src, link: r.link, title: r.title, by: r.by || '', lic: r.lic || '', fileLink: r.fileLink || r.link, t: Date.now() } : null;
+  if (v && role && (searchErr || !ROLE_PHOTO[role].typeOk)) v.fallback = true; // not a role photo: shown this session only, never saved under the role key, retried after 10 min
+  if (v) { typeCache.set(key, v); saveTypeCache(); } else typeFailAt.set(key, Date.now());
+  return v;
+}
+async function loadPhoto(rec) {
+  const prev = photoCache.get(rec.hex); if (prev && !(prev.kind === 'none' && Date.now() - prev.t > 600000)) return; // 'none' is retried after 10 min
+  photoCache.set(rec.hex, { kind: 'pending' });
+  let found = null;
+  const attempts = [];
+  const pb = proxyBase(); if (pb) attempts.push(`${pb}/photo?hex=${rec.hex}`);
+  attempts.push(`https://api.planespotters.net/pub/photos/hex/${hexUp(rec.hex)}`);
+  for (const u of attempts) {
+    try {
+      const j = await getJSON(u);
+      const p = j && j.photos && j.photos[0];
+      if (p) found = { kind: 'airframe', src: (p.thumbnail_large || p.thumbnail).src, link: p.link, by: p.photographer };
+      break;
+    } catch (e) {}
+  }
+  if (!found) { // nobody has photographed this airframe: show a real photo of the type instead
+    try { const tp = await typePhoto(rec.a); if (tp) found = Object.assign({ kind: 'type' }, tp); } catch (e) {}
+  }
+  photoCache.set(rec.hex, found || { kind: 'none', t: Date.now(), why: nameless(rec.a) ? 'No photo: this address is not in the aircraft databases.' : '' });
+  if (selected === rec.hex) renderPanel();
+}
+async function loadRoute(rec) {
+  const cs = (rec.a.flight || '').trim(); if (!cs || routeCache.has(cs)) return;
+  const pb = proxyBase(); if (!pb) { routeCache.set(cs, null); return; }
+  routeCache.set(cs, undefined);
+  try {
+    const j = await getJSON(`${pb}/route`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ planes: [{ callsign: cs, lat: rec.a.lat, lng: rec.a.lon }] }) });
+    const r = Array.isArray(j) ? j[0] : null;
+    if (r && r.airport_codes && r.airport_codes !== 'unknown') routeCache.set(cs, { callsign: cs, number: r.number, airline_code: r.airline_code, airports: r._airports || [], plausible: r.plausible });
+    else routeCache.set(cs, null);
+  } catch (e) { routeCache.set(cs, null); }
+  if (selected === rec.hex) renderPanel();
+}
+let trackBackoffUntil = 0; // after an OpenSky quota error (HTTP 429) tracks are not fetched automatically for 10 min
+/* Fetch the aircraft's OpenSky trajectory (relay /api/track, OpenSky /tracks/all) into rec.hist. Runs on selection,
+   once per aircraft per 10 min; the Reload track button forces it. Anonymous OpenSky allows about 400 calls a day
+   per IP, credentials in the relay raise that, so failures are remembered too and a quota error pauses auto-loads. */
+async function loadTrack(rec, force) {
+  if (!force && (!settings.trails || rec.trackBusy || (rec.trackAt && Date.now() - rec.trackAt < 600000) || Date.now() < trackBackoffUntil)) return;
+  const pb = proxyBase();
+  rec.trackBusy = true; rec.trackErr = null;
+  if (selected === rec.hex) renderPanel();
+  try {
+    if (!pb) throw new Error('needs relay');
+    const j = await getJSON(`${pb}/track?icao=${rec.hex}`);
+    const path = (j && j.path) || [];
+    rec.hist = path.filter(p => isNum(p[1]) && isNum(p[2])).map(p => ({ lat: p[1], lon: p[2], alt: p[5] ? 'ground' : (isNum(p[3]) ? Math.round(p[3] * 3.28084) : null), t: p[0] * 1000 }));
+  } catch (e) {
+    const quota = /HTTP 429/.test(String(e.message || e)); if (quota) trackBackoffUntil = Date.now() + 600000;
+    rec.trackErr = !pb ? 'needs the relay' : quota ? 'paused: OpenSky quota reached' : 'unavailable';
+  }
+  rec.trackAt = Date.now(); rec.trackBusy = false;
+  if (selected === rec.hex) { renderSelectedTrail(); renderPanel(); }
+}
+
+/* ---------- native app bridge and deep links ----------
+   The iOS app (ios/) shows this page in a WKWebView and registers a "flightscope" script message handler. The page
+   posts it small events (ready, select, share, locate) and the app answers through window.FlightScope. In a plain
+   browser none of this runs, except Share, which uses navigator.share where the browser has it. */
+const nativeHandler = () => { const w = window.webkit; return (w && w.messageHandlers && w.messageHandlers.flightscope) || null; };
+const isNative = () => !!nativeHandler();
+function nativePost(type, data) { const h = nativeHandler(); if (!h) return false; try { h.postMessage(Object.assign({ type }, data || {})); return true; } catch (e) { return false; } }
+const canShare = () => isNative() || !!navigator.share;
+let locateCb = null;   // answers the native location request started by the Locate button
+let pendingHex = null; // aircraft to select as soon as the feed has it (deep link or FlightScope.select)
+function shareInfo(rec) {
+  const a = rec.a, cs = (a.flight || '').trim() || a.r || hexUp(a.hex);
+  const bits = [cs, a.desc || (a.t ? 'type ' + a.t : ''), a.r && a.r !== cs ? a.r : '', a.alt_baro === 'ground' ? 'on the ground' : isNum(a.alt_baro) ? fmtAltV(a.alt_baro) : '', isNum(a.gs) ? fmtSpd(a.gs) : ''].filter(Boolean);
+  const ll = rec.marker ? rec.marker.getLatLng() : { lat: a.lat, lng: a.lon };
+  const base = window.FLIGHTSCOPE_RELAY ? String(window.FLIGHTSCOPE_RELAY).replace(/\/+$/, '') + '/' : /^https?:$/.test(location.protocol) ? location.origin + location.pathname : LOCAL_RELAY.replace(/\/api$/, '/');
+  const url = `${base}#icao=${a.hex}${isNum(ll.lat) && isNum(ll.lng) ? `&lat=${ll.lat.toFixed(3)}&lon=${ll.lng.toFixed(3)}&z=${map.getZoom()}` : ''}`;
+  return { title: `FlightScope: ${cs}`, text: bits.join(' · ') + ' · live on FlightScope', url };
+}
+function shareAircraft(rec) { const info = shareInfo(rec); if (nativePost('share', info)) return; if (navigator.share) navigator.share(info).catch(() => {}); }
+/* What the app calls. select/showList also serve the deep link (end of the script) and the home-screen quick actions. */
+window.FlightScope = {
+  version: 1,
+  select(hex) {
+    hex = String(hex || '').toLowerCase(); const rec = fleet.get(hex);
+    if (!rec) { pendingHex = hex; return false; }
+    select(hex); if (rec.marker && !map.getBounds().contains(rec.marker.getLatLng())) map.setView(rec.marker.getLatLng(), Math.max(map.getZoom(), 9)); return true;
+  },
+  showList(filter) {
+    if (filter && LIST_FILTERS.some(f => f[0] === filter)) { settings.listFilter = filter; save('settings', settings); }
+    if (selected) closePanel(); listMode = true; openPanel(); renderPanel();
+  },
+  locate(lat, lon, error) { const cb = locateCb; locateCb = null; if (cb) cb(isNum(lat) && isNum(lon) ? { lat, lon } : null, error); },
+  refresh() { if (!paused) tick(); },
+};
+if (isNative()) document.body.classList.add('native');
+{ const pl = $('#privacyLink'); pl.addEventListener('click', () => { pl.href = proxyBase().replace(/\/api$/, '') + '/privacy'; }); } // the relay serves the notice; resolved late so a custom relay URL counts
+
+/* ---------- UI wiring ---------- */
+$('#btnClose').onclick = closePanel;
+$('#btnList').onclick = () => { if (listMode && !selected && $('#panel').classList.contains('open')) { closePanel(); return; } selected && closePanel(); listMode = true; openPanel(); renderPanel(); };
+$('#q').addEventListener('input', e => { query = e.target.value; listShown = LIST_PAGE; if (query.trim()) { if (selected) { const p = selected; selected = null; if (fleet.get(p)) renderMarker(fleet.get(p), feedNow); renderSelectedTrail(); } listMode = true; openPanel(); } renderPanel(); });
+$('#q').addEventListener('keydown', e => { if (e.key === 'Enter') { const li = $('#pbody li[data-hex]'); if (li) li.click(); } if (e.key === 'Escape') { e.target.value = ''; query = ''; closePanel(); } });
+$('#btnPause').onclick = () => { paused = !paused; $('#btnPause').classList.toggle('on', paused); $('#icoPause').hidden = paused; $('#icoPlay').hidden = !paused; $('#btnPause').title = paused ? 'Resume updates' : 'Pause updates'; if (paused) setStatus('paused', 'Paused · ' + fleet.size + ' aircraft'); else tick(); };
+// Location for the Locate button and the launch view: the iOS app answers through FlightScope.locate() (Core Location),
+// anywhere else the browser's geolocation, which needs https or localhost (a LAN address over http gets an error at once).
+function requestLocation(done, maxAge) {
+  if (nativePost('locate')) {
+    locateCb = done; setTimeout(() => { if (locateCb === done) { locateCb = null; done(null, 'Location timed out'); } }, 20000); return;
+  }
+  if (!navigator.geolocation) { done(null, 'Location not available'); return; }
+  navigator.geolocation.getCurrentPosition(p => done({ lat: p.coords.latitude, lon: p.coords.longitude }), () => done(null), { timeout: 8000, maximumAge: maxAge || 60000 });
+}
+function showLocation(pos, zoom, animate) {
+  map.setView([pos.lat, pos.lon], zoom, { animate: animate !== false });
+  if (settings.rings) { settings.ringsAt = { lat: pos.lat, lon: pos.lon }; save('settings', settings); renderRings(); } // rings follow you
+}
+// The zoom at which the map shows what a camera `ft` above the ground would see: a 60° vertical field of view spans
+// 2·h·tan 30° of ground across the map's height (Web Mercator: 156,543 m per pixel at zoom 0 on the equator).
+// 2,000 ft on an 800 px tall map at 40° N comes out at zoom 17.
+function zoomForEye(ft, lat) {
+  const spanM = 2 * ft * 0.3048 * Math.tan(Math.PI / 6), mPerPx = spanM / Math.max(200, map.getSize().y);
+  return clamp(Math.round(Math.log2(156543.03 * Math.cos(lat * Math.PI / 180) / mPerPx)), 3, map.getMaxZoom() || 18);
+}
+$('#btnLocate').onclick = () => {
+  const btn = $('#btnLocate');
+  btn.classList.add('on');
+  requestLocation((pos, err) => {
+    btn.classList.remove('on');
+    if (!pos) { setStatus('err', err || 'Location permission denied'); setTimeout(tick, 1500); return; }
+    showLocation(pos, Math.max(map.getZoom(), 9));
+  });
+};
+$('#btnSettings').onclick = () => { const s = $('#settings'); s.hidden = !s.hidden; $('#btnSettings').classList.toggle('on', !s.hidden); };
+$('#blockedClose').onclick = () => { $('#blocked').hidden = true; };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#settings').hidden) { $('#settings').hidden = true; $('#btnSettings').classList.remove('on'); } else closePanel(); } });
+document.addEventListener('click', e => { const s = $('#settings'); if (!s.hidden && !s.contains(e.target) && !$('#btnSettings').contains(e.target)) { s.hidden = true; $('#btnSettings').classList.remove('on'); } });
+/* ---------- overlays: range rings and rain radar ---------- */
+map.createPane('weather').style.zIndex = 350; // above the basemap (200), below trails and reference labels (400)
+map.createPane('rings').style.zIndex = 360;
+const ringLayer = L.layerGroup(), ringRenderer = L.svg({ pane: 'rings' });
+let weatherLayer = null, weatherTimer = null, weatherFrame = null;
+/* Rings are drawn around settings.ringsAt: the map centre at the moment they were switched on, or your position
+   after a Locate while they are on. Radii follow the units setting (nm or km); labels sit at each ring's north point. */
+function renderRings() {
+  ringLayer.clearLayers();
+  if (!settings.rings) { if (map.hasLayer(ringLayer)) map.removeLayer(ringLayer); return; }
+  const c = settings.ringsAt || { lat: map.getCenter().lat, lon: map.getCenter().lng }, u = units();
+  for (const r of u.ringRadii) {
+    const m = r * u.ringUnitM;
+    L.circle([c.lat, c.lon], { radius: m, pane: 'rings', renderer: ringRenderer, interactive: false, className: 'ring', fill: false, weight: 1 }).addTo(ringLayer);
+    L.marker([c.lat + m / 111195, c.lon], { pane: 'rings', interactive: false, keyboard: false, icon: L.divIcon({ className: 'ring-lbl', html: `${r} ${u.ringUnit}`, iconSize: null }) }).addTo(ringLayer);
+  }
+  L.circleMarker([c.lat, c.lon], { radius: 3, pane: 'rings', renderer: ringRenderer, interactive: false, className: 'ring-c', weight: 1 }).addTo(ringLayer);
+  if (!map.hasLayer(ringLayer)) ringLayer.addTo(map);
+}
+/* Rain radar: RainViewer's public API lists the recent frames; the newest one becomes a tile layer. The list is
+   re-read every 5 minutes and the layer swapped only when the frame changed (the old one stays until the new one
+   has loaded). Colour scheme 2 (universal blue) with smoothing and snow; radar detail stops around zoom 10. */
+async function loadWeather() {
+  if (!settings.weather) return;
+  const wx = $('#legend .wx');
+  try {
+    const r = await fetch('https://api.rainviewer.com/public/weather-maps.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json(), past = (j.radar && j.radar.past) || [], f = past[past.length - 1];
+    if (!f) throw new Error('no frames');
+    if (!settings.weather) return; // switched off while the request was in flight
+    if (weatherFrame !== f.path) {
+      const next = retryTiles(L.tileLayer(`${j.host}${f.path}/512/{z}/{x}/{y}/2/1_1.png`, { pane: 'weather', opacity: 0.6, tileSize: 512, zoomOffset: -1, maxZoom: 19, maxNativeZoom: 8, updateWhenZooming: false, attribution: 'Rain &copy; <a href="https://www.rainviewer.com/">RainViewer</a>' }));
+      const old = weatherLayer; next.addTo(map);
+      if (old) { let gone = false; const drop = () => { if (!gone) { gone = true; map.removeLayer(old); } }; next.once('load', drop); setTimeout(drop, 4000); }
+      weatherLayer = next; weatherFrame = f.path;
+    }
+    wx.textContent = 'Rain radar · ' + new Date(f.time * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch (e) { wx.textContent = 'Rain radar unavailable'; }
+}
+function syncWeather() {
+  $('#legend .wx').hidden = !settings.weather;
+  if (settings.weather) { if (!weatherTimer) { weatherTimer = setInterval(loadWeather, 5 * 60000); $('#legend .wx').textContent = 'Rain radar · loading'; loadWeather(); } }
+  else { if (weatherTimer) { clearInterval(weatherTimer); weatherTimer = null; } if (weatherLayer) { map.removeLayer(weatherLayer); weatherLayer = null; weatherFrame = null; } }
+}
+function syncOverlays() { renderRings(); syncWeather(); }
+function syncLegend() { const u = units(); $('#legend .cap').textContent = u.cap; $('#legend .ticks').innerHTML = u.legend.map(x => `<span>${x}</span>`).join('');
+  $('#legend .keys').innerHTML = Object.values(BADGES).map(b => '<span>' + b.svg + b.name + '</span>').join(''); }
+
+function syncSettingsUI() {
+  $('#sProxy').value = settings.proxy || ''; $('#sInterval').value = String(settings.interval); $('#sRadius').value = settings.maxRadius; $('#sRadiusVal').textContent = fmtDist(settings.maxRadius, 0);
+  $('#sTrailMin').value = String(settings.trailMin); $('#sTrails').checked = settings.trails; $('#sLabels').checked = settings.labels; $('#sAirports').checked = settings.airports; $('#sTheme').value = settings.theme;
+  $('#sUnits').value = settings.units; $('#sRings').checked = settings.rings; $('#sWeather').checked = settings.weather;
+  for (const o of $('#sStart').options) if (+o.value) o.textContent = 'My location · ' + fmtAltV(+o.value) + ' up'; // follows the units
+  $('#sStart').value = String(settings.startView);
+}
+syncSettingsUI(); syncLegend(); syncOverlays();
+function commit() { // syncZoomClass also syncs airports; the panel/list re-render so a units change shows at once
+  save('settings', settings); syncZoomClass(); applyTheme(); syncLegend(); syncOverlays(); syncSettingsUI();
+  if (!settings.trails) selTrailLayer.clearLayers(); else renderSelectedTrail();
+  if ($('#panel').classList.contains('open')) renderPanel();
+}
+$('#sProxy').addEventListener('change', e => { settings.proxy = e.target.value.trim(); lastVia = null; commit(); tick(); });
+$('#sInterval').addEventListener('change', e => { settings.interval = +e.target.value; commit(); });
+$('#sRadius').addEventListener('input', e => { settings.maxRadius = +e.target.value; $('#sRadiusVal').textContent = fmtDist(settings.maxRadius, 0); });
+$('#sRadius').addEventListener('change', () => { commit(); tick(); });
+$('#sTrailMin').addEventListener('change', e => { settings.trailMin = +e.target.value; commit(); });
+$('#sTrails').addEventListener('change', e => { settings.trails = e.target.checked; commit(); });
+$('#sLabels').addEventListener('change', e => { settings.labels = e.target.checked; commit(); });
+$('#sAirports').addEventListener('change', e => { settings.airports = e.target.checked; commit(); });
+$('#sTheme').addEventListener('change', e => { settings.theme = e.target.value; commit(); });
+$('#sUnits').addEventListener('change', e => { settings.units = e.target.value; commit(); });
+$('#sStart').addEventListener('change', e => { settings.startView = +e.target.value; commit(); });
+$('#sRings').addEventListener('change', e => { settings.rings = e.target.checked; if (settings.rings) { const c = map.getCenter(); settings.ringsAt = { lat: c.lat, lon: c.lng }; } commit(); });
+$('#sWeather').addEventListener('change', e => { settings.weather = e.target.checked; commit(); });
+map.on('click', () => { if (selected) closePanel(); });
+
+/* status age ticker */
+setInterval(() => { if (!paused && firstSuccess && (!consecutiveErrors || ridingOut)) { const s = Math.round((Date.now() - lastFeedAt) / 1000); $('#statusText').textContent = `${lastSource} · ${fleet.size} aircraft · ${s}s ago${ridingOut ? ' · retrying' : ''}`; } }, 1000);
+
+let deepLinked = false; // a shared link chose the view: the launch does not move to the device's location
+/* Deep link (what Share produces): #icao=hex&lat=..&lon=..&z=.. views that spot and selects the aircraft once the feed has it. */
+{
+  const deepLink = {}; for (const kv of location.hash.replace(/^#/, '').split('&')) { const i = kv.indexOf('='); if (i > 0) try { deepLink[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1)); } catch (e) {} }
+  const lat = parseFloat(deepLink.lat), lon = parseFloat(deepLink.lon);
+  if (/^[0-9a-f]{6}$/i.test(deepLink.icao || '')) pendingHex = deepLink.icao.toLowerCase();
+  if (isNum(lat) && isNum(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) map.setView([lat, lon], Math.min(14, Math.max(7, parseInt(deepLink.z, 10) || 10)), { animate: false });
+  deepLinked = !!(pendingHex || isNum(lat));
+  if (pendingHex || isNum(lat)) try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+}
+nativePost('ready', { version: 1 });
+/* Start at my location (settings.startView = camera height in ft, 0 = keep the view the map was left at). A drag, zoom or
+   selection before the location arrives wins; no location (denied, http on a LAN address, timeout) leaves the saved view. */
+if (settings.startView > 0 && !deepLinked) {
+  let touched = false; const mark = () => { touched = true; };
+  map.on('dragstart zoomstart', mark);
+  requestLocation(pos => {
+    map.off('dragstart zoomstart', mark);
+    if (pos && !touched && !selected) showLocation(pos, zoomForEye(settings.startView, pos.lat), false);
+  }, 300000);
+}
+tick();
+})();
+</script>
+</body>
+</html>

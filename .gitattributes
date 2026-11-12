@@ -1,0 +1,6 @@
+# Store text with LF in the repository; Windows-only files keep CRLF in every checkout.
+* text=auto
+*.cmd text eol=crlf
+README.txt text eol=crlf
+*.ico binary
+*.png binary
