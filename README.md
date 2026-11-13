@@ -57,7 +57,7 @@ If one position source fails, the next takes over and the map keeps gliding; the
 
 | Satellite map | Nearest list |
 | --- | --- |
-| ![An arrival over Brooklyn on the satellite map](docs/satellite.jpg) | ![The nearest-aircraft list on the light map](docs/list.jpg) |
+| ![An arrival into LaGuardia over Queens on the satellite map](docs/satellite.jpg) | ![The nearest-aircraft list on the light map](docs/list.jpg) |
 
 ## On your phone
 

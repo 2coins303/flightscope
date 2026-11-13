@@ -21,6 +21,8 @@ Default view is the New York area. Built Oct 2026; now being polished in Claude 
 
 ## Status when this repository was created (2026-11-12)
 
+- Public since 2026-11-13 at https://github.com/2coins303/flightscope (MIT; topics set in the About box). Anything committed is
+  published: keep secrets, personal locations and Planespotters photos out of the repository and its images.
 - Built and run on a Windows PC: the desktop shortcut runs `FlightScope.cmd`, which starts the relay hidden and opens
   http://localhost:8787. On another machine: `node flightscope-server.js`, then open that address (Node 18+).
 - Newest feature: start at my location (see Page internals). Tested only with a simulated location; its first real run
