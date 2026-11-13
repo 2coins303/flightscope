@@ -1,7 +1,8 @@
 # FlightScope
 
 Live flight radar for the browser: aircraft on a map with altitude coloring, a trail for the selected
-aircraft, and a details panel (photo, route, type, speeds, squawk, autopilot modes, signal, links).
+aircraft, and a details panel (photo, route, type, speeds, squawk, autopilot modes, signal). The owner had the panel's
+outbound links to other flight-tracking sites removed on 2026-11-13: do not add them back or name those sites in the repository.
 Default view is the New York area. Built Oct 2026; now being polished in Claude Code.
 
 ## Working rules (set by the owner)

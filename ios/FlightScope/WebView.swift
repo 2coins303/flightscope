@@ -132,7 +132,7 @@ final class WebBridge: NSObject, ObservableObject, WKScriptMessageHandler, WKNav
     }
 
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        if let url = navigationAction.request.url { open(url) }   // target="_blank" links: FlightAware, photo credits, the privacy page
+        if let url = navigationAction.request.url { open(url) }   // target="_blank" links: photo credits, the privacy page
         return nil
     }
 

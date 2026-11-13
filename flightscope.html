@@ -797,7 +797,6 @@ body:not(.zoom-mid) .leaflet-marker-icon.gnd-hidden{display:none}
 .btn:hover{border-color:var(--line-2)}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn.on{border-color:var(--accent);color:var(--accent)}
-.links{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:12px;font-size:12px}
 .hint{color:var(--muted);font-size:12px;margin-top:8px}
 .list{list-style:none;margin:0;padding:0}
 .list li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 4px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:6px}
@@ -1638,8 +1637,6 @@ function renderPanel() {
   add('Trail', tp.length > 1 ? `${tp.length} fixes · ${tpMin >= 60 ? Math.floor(tpMin / 60) + ' h ' + (tpMin % 60) + ' min' : tpMin + ' min'} · since ${new Date(tp[0].t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${tpNote}` : (rec.trackBusy ? 'loading history…' : null));
   html += `<ul class="rows">${rows.join('')}</ul>`;
   html += `<div class="actions"><button class="btn ${following ? 'on' : ''}" id="btnFollow">${following ? 'Following' : 'Follow'}</button><button class="btn" id="btnTrack">Reload track</button><button class="btn" id="btnCenter">Center</button>${canShare() ? '<button class="btn" id="btnShare">Share</button>' : ''}</div>`;
-  const csq = encodeURIComponent(cs);
-  html += `<div class="links"><a href="https://flightaware.com/live/flight/${csq}" target="_blank" rel="noopener">FlightAware</a><a href="https://www.flightradar24.com/${csq}" target="_blank" rel="noopener">Flightradar24</a><a href="https://globe.adsbexchange.com/?icao=${esc(a.hex)}" target="_blank" rel="noopener">ADS-B Exchange</a><a href="https://www.planespotters.net/hex/${hexUp(a.hex)}" target="_blank" rel="noopener">Planespotters</a></div>`;
   body.innerHTML = html;
   $('#btnFollow').onclick = () => { following = !following; renderPanel(); if (following) followSelected(); };
   $('#btnCenter').onclick = () => { if (rec.marker) map.setView(rec.marker.getLatLng(), Math.max(map.getZoom(), 10)); };

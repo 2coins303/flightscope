@@ -9,7 +9,7 @@ human judgement; this removes the concrete, known reasons for a rejection.
 apps already on the App Store. App names must be unique in App Store Connect, and guideline 5.2.1 (intellectual
 property) covers names that imitate an existing brand. Pick another listing name; the code and the page title
 can stay as they are, or change the `<title>`, `apple-mobile-web-app-title`, manifest name and `Config.appName`
-to match. Avoid other companies' trademarks in the name, subtitle and keywords (no "Flightradar24", "FlightAware").
+to match. Avoid other companies' trademarks in the name, subtitle and keywords.
 
 ## 2. Guidelines, one by one
 
@@ -86,7 +86,7 @@ Check these yourself before submitting; terms change and this is not legal advic
 5. Airplane mode: the offline screen appears; turn it off: the map comes back by itself. Stop the relay (or use a
    wrong `relayURL`): the retry screen appears; Try again works once it is reachable.
 6. Quick actions: press and hold the icon from cold and while running; each opens the right list.
-7. Links: FlightAware, Flightradar24, photo credits and "Privacy & data sources" open in the in-app Safari sheet
+7. Links: photo credits and "Privacy & data sources" open in the in-app Safari sheet
    and Done returns to the map.
 8. Rotate, dark and light mode, iPad split view. Background the app for a minute, return: positions refresh.
 9. Settings sheet: every control works; the privacy link opens.
