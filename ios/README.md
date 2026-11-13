@@ -6,7 +6,7 @@ updates reach the app without a new release.
 
 What the app adds (this is what App Review weighs under guideline 4.2, "minimum functionality"):
 
-- **Core Location** for the Locate button: the system permission prompt with a purpose string, nothing stored.
+- **Core Location** for the launch view and the Locate button: the system permission prompt with a purpose string.
 - **Share sheet** from the aircraft panel's Share button, with a deep link that reopens that aircraft.
 - **Haptic tap** when an aircraft is selected.
 - **Home-screen quick actions** (press and hold the icon): Nearest aircraft, Helicopters, Military, Emergency squawks.
@@ -34,7 +34,7 @@ APIs (iOS 16 and up), but expect a warning or a small fix on first build.
 3. In `Config.swift` set `relayURL` to your host.
 4. Target → Info → Custom iOS Target Properties, add:
    - `Privacy - Location When In Use Usage Description` (`NSLocationWhenInUseUsageDescription`):
-     "Used only when you tap Locate, to centre the map and range rings on you. Your location is not stored."
+     "Used when the map opens and when you tap Locate, to centre the map and range rings on you. Your position is not sent anywhere."
    - `App Uses Non-Exempt Encryption` (`ITSAppUsesNonExemptEncryption`): NO. The app only uses HTTPS, so
      App Store Connect will not ask about export compliance on every upload.
 5. App icon: download `https://<your-host>/icon-1024.png` and drop it into Assets → AppIcon (Xcode 14 and later

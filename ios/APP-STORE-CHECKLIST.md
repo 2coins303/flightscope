@@ -23,7 +23,7 @@ to match. Avoid other companies' trademarks in the name, subtitle and keywords (
 | 4.0 Design | Safe areas via `env(safe-area-inset-*)`, dark and light follow the system, landscape works. | Check the Dynamic Island and home indicator do not cover the header or the bottom sheet. |
 | 5.1.1 Data collection and storage | Purpose string for location; privacy page at `/privacy`; "Privacy & data sources" link in the Settings sheet. | Put `https://<host>/privacy` in the Privacy Policy URL field. Fill in App Privacy (section 3). |
 | 5.1.2 Data use and sharing | Coordinates go to the relay and the flight-data providers only to answer the request; no third-party SDKs, analytics or ads. | Nothing, as long as you add none. |
-| 5.1.5 Location services | Used only for Locate; the app works without permission; denial is handled with a status message. | Keep the purpose string honest. |
+| 5.1.5 Location services | Used when the map opens (Settings, On launch; can be turned off) and for Locate; the app works without permission; a refusal at launch keeps the last view, at Locate it shows a status message. | Keep the purpose string honest. |
 | 5.2.1 Name and branding | See section 1. | Rename the listing. |
 | 5.2.2 Third-party content and terms | See section 4. | Check the terms of each data source for an App Store app; keep the app free with no ads unless you have licences that allow more. |
 | 2.4.1 iPad | Universal app, responsive layout. | Test split view and rotation on an iPad. |
@@ -33,7 +33,7 @@ to match. Avoid other companies' trademarks in the name, subtitle and keywords (
 
 ## 3. App Privacy answers (App Store Connect → App Privacy)
 
-The app sends the map centre and radius to your relay and on to the flight-data providers; after Locate that is
+The app sends the map centre and radius to your relay and on to the flight-data providers; after the launch view or Locate that is
 the user's position. Your relay does not store it, which arguably makes it "not collected" under Apple's
 definition, but the safe declaration is:
 
@@ -80,8 +80,9 @@ Check these yourself before submitting; terms change and this is not legal advic
 2. Tap an aircraft: haptic tap, details panel opens, trail draws. Close it. Tap a list row.
 3. Share: the share sheet appears (iPhone and iPad). Send the link to yourself; opening it in Safari views that
    spot and selects the aircraft.
-4. Locate: the permission prompt appears with your purpose string; allow → map centres on you. Reinstall, deny →
-   status shows the message and the app keeps working.
+4. First launch: the permission prompt appears with your purpose string; allow → the map opens on you at the On launch
+   height, and Locate centres on you again. Reinstall, deny → the map opens at the last view; Locate then shows the
+   message and the app keeps working.
 5. Airplane mode: the offline screen appears; turn it off: the map comes back by itself. Stop the relay (or use a
    wrong `relayURL`): the retry screen appears; Try again works once it is reachable.
 6. Quick actions: press and hold the icon from cold and while running; each opens the right list.

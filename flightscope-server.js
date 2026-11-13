@@ -296,7 +296,7 @@ const MANIFEST = {
   start_url: '/', scope: '/', display: 'standalone', orientation: 'any', background_color: '#0c1218', theme_color: '#0c1218',
   icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }],
 };
-const PRIVACY_UPDATED = '2026-10-28';
+const PRIVACY_UPDATED = '2026-11-13';
 const escHtml = v => String(v).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 function privacyPage() { // the notice an app-store listing links to; the contact comes from FLIGHTSCOPE_CONTACT
   const c = contact(), who = c && c !== 'you@example.com'
@@ -312,7 +312,7 @@ h1{font-size:26px;margin:0 0 4px}h2{font-size:18px;margin:28px 0 8px}p,li{margin
 <p><small>Last updated ${PRIVACY_UPDATED}</small></p>
 <p>FlightScope shows live aircraft positions from open ADS-B networks on a map. It has no accounts, no advertising, no analytics and no tracking. This page describes the little data that moves when you use it, in a browser or in the iOS app.</p>
 <h2>Location</h2>
-<p>Your device location is used only when you press <b>Locate</b>: the map and the optional range rings centre on you. The system asks for permission first, and everything works without it. The position stays in memory; it is not written to disk or sent anywhere by itself.</p>
+<p>Your device location is used when the map opens (Settings, <b>On launch</b>, which can keep the map where you left it instead) and when you press <b>Locate</b>: the map and the optional range rings centre on you. The system asks for permission first, and everything works without it. The position itself is not sent anywhere; the map view it produces is saved on your device like any other map position (see below), and the next feed request covers that area.</p>
 <h2>What leaves your device</h2>
 <ul>
 <li><b>The map area.</b> To list the aircraft in view, the page sends the centre and radius of the map (latitude, longitude, distance) to this relay, which forwards them to the flight data providers below. After Locate that area is around you. The relay keeps no record of these requests.</li>
